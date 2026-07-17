@@ -2,8 +2,9 @@
   "name": "express-vercel-test",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx src/app.ts",
-    "build": "echo Build completed"
+    "dev": "tsx src/index.ts",
+    "build": "echo Build completed",
+    "start": "tsx src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
