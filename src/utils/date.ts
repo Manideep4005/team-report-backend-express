@@ -1,40 +1,35 @@
+import { startOfDay, addDays } from "date-fns";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
+
+const TIME_ZONE = "Asia/Kolkata";
+
 export function getISTTodayRange() {
     const now = new Date();
 
-    // Convert current UTC time to IST
-    const istNow = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    // Current time represented in IST
+    const zonedNow = toZonedTime(now, TIME_ZONE);
 
-    // Start of IST day
-    const startIST = new Date(
-        istNow.getFullYear(),
-        istNow.getMonth(),
-        istNow.getDate()
-    );
+    // Midnight in IST
+    const startOfTodayIST = startOfDay(zonedNow);
 
-    // Convert back to UTC for storing/querying
-    const startUTC = new Date(startIST.getTime() - 5.5 * 60 * 60 * 1000);
+    // Convert IST midnight back to UTC for DB queries/storage
+    const start = fromZonedTime(startOfTodayIST, TIME_ZONE);
 
-    const endUTC = new Date(startUTC);
-    endUTC.setUTCDate(endUTC.getUTCDate() + 1);
+    const end = addDays(start, 1);
 
-    return {
-        start: startUTC,
-        end: endUTC,
-    };
+    return { start, end };
 }
-
 
 export function getISTRange(date: string) {
     const [year, month, day] = date.split("-").map(Number);
 
-    // IST midnight
-    const startIST = new Date(year, month - 1, day);
+    // Construct midnight in IST
+    const start = fromZonedTime(
+        new Date(year, month - 1, day),
+        TIME_ZONE
+    );
 
-    // Convert IST -> UTC
-    const start = new Date(startIST.getTime() - 5.5 * 60 * 60 * 1000);
-
-    const end = new Date(start);
-    end.setUTCDate(end.getUTCDate() + 1);
+    const end = addDays(start, 1);
 
     return { start, end };
 }

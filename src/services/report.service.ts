@@ -7,6 +7,7 @@ class ReportService {
 
         const { start, end } = getISTTodayRange();
 
+
         const report = await reportRepository.findToday(
             userId,
             start,
