@@ -10,15 +10,21 @@ class SummaryService {
             summaryRepository.getTodayReports(start, end),
         ]);
 
-        return users.map((user) => {
-            const report = reports.find(
-                (r) => r.userId === user.id
-            );
+        const reportMap = new Map(
+            reports.map((report) => [report.userId, report])
+        );
 
-            return {
-                name: user.name,
-                description: report?.description ?? "Pending",
-            };
+        return users.flatMap((user) => {
+            const report = reportMap.get(user.id);
+
+            return report
+                ? [
+                      {
+                          name: user.name,
+                          description: report.description,
+                      },
+                  ]
+                : [];
         });
     }
 }
