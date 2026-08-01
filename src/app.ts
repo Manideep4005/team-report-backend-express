@@ -20,6 +20,17 @@ app.use(express.json());
 
 app.use(cookieParser());
 
+
+app.use((req, res, next) => {
+    res.setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+});
+
 app.get("/", (_, res) => {
     res.json({
         success: true,
