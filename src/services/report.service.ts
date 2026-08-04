@@ -1,29 +1,18 @@
 import reportRepository from "../repositories/report.repository";
-import { getISTRange, getISTTodayRange } from "../utils/date";
+import { getISTDateRange, getISTRange, getISTTodayRange } from "../utils/date";
 
 class ReportService {
 
-    async save(userId: string, description: string) {
-
-        const { start, end } = getISTTodayRange();
-
-
-        const report = await reportRepository.findToday(
-            userId,
-            start,
-            end
+    async save(
+        userId: string,
+        description: string,
+        reportDate: string
+    ) {
+        const { start } = getISTDateRange(
+            new Date(reportDate)
         );
 
-        if (report) {
-
-            return reportRepository.update(
-                report.id,
-                description
-            );
-
-        }
-
-        return reportRepository.create(
+        return reportRepository.upsert(
             userId,
             description,
             start

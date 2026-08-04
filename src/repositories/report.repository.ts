@@ -14,6 +14,22 @@ class ReportRepository {
         });
     }
 
+    async findByDate(
+        userId: string,
+        start: Date,
+        end: Date
+    ) {
+        return prisma.workReport.findFirst({
+            where: {
+                userId,
+                reportDate: {
+                    gte: start,
+                    lt: end,
+                },
+            },
+        });
+    }
+
     async create(userId: string, description: string, reportDate: Date) {
         return prisma.workReport.create({
             data: {
@@ -48,6 +64,38 @@ class ReportRepository {
                 reportDate: true,
                 createdAt: true,
                 updatedAt: true,
+            },
+        });
+    }
+
+    async upsert(
+        userId: string,
+        description: string,
+        reportDate: Date
+    ) {
+        return prisma.workReport.upsert({
+            where: {
+                userId_reportDate: {
+                    userId,
+                    reportDate,
+                },
+            },
+            create: {
+                userId,
+                description,
+                reportDate,
+            },
+            update: {
+                description,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
             },
         });
     }

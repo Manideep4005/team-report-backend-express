@@ -4,10 +4,12 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 export const save = asyncHandler(async (req: Request, res: Response) => {
 
-    const report = await reportService.save(
-        req.user.id,
-        req.body.description
-    );
+    const report =
+        await reportService.save(
+            req.user.id,
+            req.body.description,
+            req.body.reportDate
+        );
 
     res.json({
         success: true,

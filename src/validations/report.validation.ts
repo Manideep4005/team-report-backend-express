@@ -6,4 +6,5 @@ export const saveReportSchema = z.object({
         .trim()
         .min(10, "Minimum 10 characters required.")
         .max(5000),
+    reportDate: z.string()
 });
