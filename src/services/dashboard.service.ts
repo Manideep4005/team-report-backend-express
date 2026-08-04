@@ -1,11 +1,16 @@
 import dashboardRepository from "../repositories/dashboard.repository";
-import { getISTTodayRange } from "../utils/date";
+import { getISTDateRange, getISTTodayRange } from "../utils/date";
 
 class DashboardService {
 
-    async getDashboard(userId: string) {
-
-        const { start, end } = getISTTodayRange();
+    async getDashboard(
+        userId: string,
+        date?: string
+    ) {
+        const { start, end } =
+            date
+                ? getISTDateRange(new Date(date))
+                : getISTTodayRange();
 
         const [users, reports] = await Promise.all([
             dashboardRepository.getUsers(),
@@ -40,5 +45,4 @@ class DashboardService {
         };
     }
 }
-
 export default new DashboardService();

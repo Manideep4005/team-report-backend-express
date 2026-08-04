@@ -11,4 +11,6 @@ router.get(
     SummaryController.getSummary
 );
 
+router.get("/by-date", SummaryController.getSummaryByDate);
+
 export default router;

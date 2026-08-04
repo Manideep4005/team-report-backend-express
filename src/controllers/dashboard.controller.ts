@@ -4,16 +4,14 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 export const getDashboard = asyncHandler(
     async (req: Request, res: Response) => {
-
-        const dashboard =
-            await dashboardService.getDashboard(
-                req.user.id
-            );
+        const dashboard = await dashboardService.getDashboard(
+            req.user.id,
+            req.query.date as string | undefined
+        );
 
         res.json({
             success: true,
             data: dashboard,
         });
-
     }
 );

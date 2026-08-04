@@ -20,6 +20,20 @@ export function getISTTodayRange() {
     return { start, end };
 }
 
+export function getISTDateRange(date: Date) {
+    // Convert input date to IST
+    const zonedDate = toZonedTime(date, TIME_ZONE);
+
+    // Start of that day in IST
+    const startOfDateIST = startOfDay(zonedDate);
+
+    // Convert back to UTC for DB query
+    const start = fromZonedTime(startOfDateIST, TIME_ZONE);
+    const end = addDays(start, 1);
+
+    return { start, end };
+}
+
 export function getISTRange(date: string) {
     const [year, month, day] = date.split("-").map(Number);
 
