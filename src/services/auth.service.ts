@@ -71,6 +71,7 @@ class AuthService {
         if (!user) {
 
             await loginHistoryRepository.create({
+                userId: null,
                 email,
                 status: "FAILED",
                 ipAddress: ipAddress ?? undefined,
