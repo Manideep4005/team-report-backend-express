@@ -15,21 +15,31 @@ class LoginHistoryRepository {
         });
     }
 
-    async findAll() {
-        return prisma.loginHistory.findMany({
-            orderBy: {
-                createdAt: "desc",
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
+    async findAll(skip: number, take: number) {
+        const [items, total] = await Promise.all([
+            prisma.loginHistory.findMany({
+                skip,
+                take,
+                orderBy: {
+                    createdAt: "desc",
+                },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        },
                     },
                 },
-            },
-        });
+            }),
+
+            prisma.loginHistory.count(),
+        ]);
+
+        return {
+            items,
+            total,
+        };
     }
 
     async findByUserId(userId: string) {
