@@ -27,8 +27,9 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const result = await authService.login(
-        email,
-        password
+        req.body.email,
+        req.body.password,
+        req
     );
 
     res.cookie("token", result.token, cookieOptions);

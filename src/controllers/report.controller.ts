@@ -44,3 +44,16 @@ export const history = asyncHandler(async (req: Request, res: Response) => {
     });
 
 });
+
+export const all = asyncHandler(
+    async (req: Request, res: Response) => {
+        const reports = await reportService.all(
+            req.query.date as string | undefined
+        );
+
+        res.json({
+            success: true,
+            data: reports,
+        });
+    }
+);

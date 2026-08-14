@@ -11,6 +11,10 @@ import profileRoutes from "./routes/profile.routes";
 
 import { errorMiddleware } from "./middleware/error.middleware";
 import { notFoundMiddleware } from "./middleware/notFound.middleware";
+import userRoutes from "./routes/user.routes";
+import roleRoutes from "./routes/role.routes";
+import permissionRoutes from "./routes/permission.routes";
+import loginHistoryRoutes from "./routes/loginHistory.routes";
 
 const app = express();
 
@@ -44,6 +48,13 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/permissions", permissionRoutes);
+app.use(
+    "/api/login-history",
+    loginHistoryRoutes
+);
 
 // 404 should be AFTER all routes
 app.use(notFoundMiddleware);

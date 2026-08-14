@@ -13,7 +13,29 @@ class ReportRepository {
             },
         });
     }
+    async findAll(where?: any) {
+        return prisma.workReport.findMany({
+            where,
+            orderBy: {
+                reportDate: "desc",
+            },
+            select: {
+                id: true,
+                description: true,
+                reportDate: true,
+                createdAt: true,
+                updatedAt: true,
 
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+        });
+    }
     async findByDate(
         userId: string,
         start: Date,

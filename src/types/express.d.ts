@@ -1,5 +1,12 @@
-import { User } from "@prisma/client";
+export interface AuthPermission {
+    code: string;
+}
 
+export interface AuthRole {
+    id: string;
+    name: string;
+    permissions: AuthPermission[];
+}
 
 export interface AuthUser {
     id: string;
@@ -7,6 +14,7 @@ export interface AuthUser {
     email: string;
     createdAt: Date;
     updatedAt: Date;
+    role: AuthRole;
 }
 
 declare global {

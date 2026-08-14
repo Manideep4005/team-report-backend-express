@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { verifyToken } from "../utils/jwt";
 import { prisma } from "../prisma/client";
+import { AuthUser } from "../types/express";
 
 export async function authenticate(
     req: Request,
@@ -8,7 +9,6 @@ export async function authenticate(
     next: NextFunction
 ) {
     try {
-
         const token = req.cookies.token;
 
         if (!token) {
@@ -30,6 +30,23 @@ export async function authenticate(
                 email: true,
                 createdAt: true,
                 updatedAt: true,
+
+                role: {
+                    select: {
+                        id: true,
+                        name: true,
+
+                        permissions: {
+                            select: {
+                                permission: {
+                                    select: {
+                                        code: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             },
         });
 
@@ -40,16 +57,32 @@ export async function authenticate(
             });
         }
 
-        req.user = user;
+        const authUser: AuthUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+
+            role: {
+                id: user.role.id,
+                name: user.role.name,
+                permissions: user.role.permissions.map(
+                    ({ permission }) => ({
+                        code: permission.code,
+                    })
+                ),
+            },
+        };
+
+        req.user = authUser;
+
 
         next();
-
     } catch {
-
         return res.status(401).json({
             success: false,
             message: "Invalid token",
         });
-
     }
 }
