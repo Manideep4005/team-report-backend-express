@@ -35,7 +35,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get("/", (_, res) => {
+app.get("/health", (_, res) => {
     res.json({
         success: true,
         message: "Backend Running 🚀",
