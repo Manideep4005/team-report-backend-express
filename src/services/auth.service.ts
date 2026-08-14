@@ -52,8 +52,11 @@ class AuthService {
         };
     }
 
-    async login(email: string, password: string, req: Request) {
-
+    async login(
+        email: string,
+        password: string,
+        req: Request
+    ) {
         const ipAddress =
             req.headers["x-forwarded-for"]
                 ?.toString()
@@ -62,31 +65,54 @@ class AuthService {
             req.socket.remoteAddress ||
             null;
 
-        // Get browser/device information
         const userAgent =
             req.headers["user-agent"] || null;
 
-        const user = await userRepository.findByEmail(email);
+        console.log("Login attempt:", {
+            email,
+            ipAddress,
+        });
+
+
+        const user =
+            await userRepository.findByEmail(email);
+
+        // --------------------------------
+        // USER DOES NOT EXIST
+        // --------------------------------
 
         if (!user) {
+            console.log(
+                "Login failed: user not found",
+                email
+            );
 
-            await loginHistoryRepository.create({
-                userId: null,
+            await this.recordLoginAttempt({
                 email,
                 status: "FAILED",
-                ipAddress: ipAddress ?? undefined,
-                userAgent: userAgent ?? undefined,
+                ipAddress,
+                userAgent,
             });
 
-            throw new ApiError(401, "Invalid credentials");
+            throw new ApiError(
+                401,
+                "Invalid credentials"
+            );
         }
+
+        // --------------------------------
+        // PASSWORD DOES NOT MATCH
+        // --------------------------------
 
         const matched = await comparePassword(
             password,
             user.password
         );
 
+        console.log("PASSWORD MATCH RESULT:", matched);
+
         if (!matched) {
+            console.log("WRONG PASSWORD - STORING HISTORY");
 
             await loginHistoryRepository.create({
                 userId: user.id,
@@ -96,15 +122,23 @@ class AuthService {
                 userAgent: userAgent ?? undefined,
             });
 
-            throw new ApiError(401, "Invalid credentials");
-        }
+            console.log("FAILED LOGIN HISTORY STORED");
 
-        await loginHistoryRepository.create({
+            throw new ApiError(
+                401,
+                "Invalid credentials"
+            );
+        }
+        // --------------------------------
+        // SUCCESS
+        // --------------------------------
+
+        await this.recordLoginAttempt({
             userId: user.id,
             email,
             status: "SUCCESS",
-            ipAddress: ipAddress ?? undefined,
-            userAgent: userAgent ?? undefined,
+            ipAddress,
+            userAgent,
         });
 
         const token = generateToken({
@@ -121,11 +155,12 @@ class AuthService {
                 id: user.role.id,
                 name: user.role.name,
 
-                permissions: user.role.permissions.map(
-                    ({ permission }) => ({
-                        code: permission.code,
-                    })
-                ),
+                permissions:
+                    user.role.permissions.map(
+                        ({ permission }) => ({
+                            code: permission.code,
+                        })
+                    ),
             },
         };
 
@@ -133,6 +168,31 @@ class AuthService {
             user: mappedUser,
             token,
         };
+    }
+
+    private async recordLoginAttempt(
+        data: {
+            userId?: string;
+            email: string;
+            status: "SUCCESS" | "FAILED";
+            ipAddress?: string | null;
+            userAgent?: string | null;
+        }
+    ) {
+        try {
+            await loginHistoryRepository.create(data);
+
+            console.log(
+                "Login history stored:",
+                data.email,
+                data.status
+            );
+        } catch (error) {
+            console.error(
+                "Failed to store login history:",
+                error
+            );
+        }
     }
 }
 

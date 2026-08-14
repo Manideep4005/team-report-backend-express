@@ -4,14 +4,25 @@ import { LoginStatus } from "@prisma/client";
 class LoginHistoryRepository {
 
     async create(data: {
-        userId?: string | null;
+        userId?: string;
         email: string;
         status: LoginStatus;
         ipAddress?: string | null;
         userAgent?: string | null;
     }) {
         return prisma.loginHistory.create({
-            data,
+            data: {
+                email: data.email,
+                status: data.status,
+                ipAddress: data.ipAddress ?? null,
+                userAgent: data.userAgent ?? null,
+
+                ...(data.userId
+                    ? {
+                        userId: data.userId,
+                    }
+                    : {}),
+            },
         });
     }
 
