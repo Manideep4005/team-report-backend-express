@@ -4,6 +4,12 @@ import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
+router.get(
+    "/preview",
+    DashboardController.loginPreview
+);
+
+
 router.use(authenticate);
 
 router.get(

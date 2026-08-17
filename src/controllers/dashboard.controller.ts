@@ -15,3 +15,16 @@ export const getDashboard = asyncHandler(
         });
     }
 );
+
+export const loginPreview = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const preview =
+            await dashboardService.getLoginPreview();
+
+        res.json({
+            success: true,
+            data: preview,
+        });
+    }
+);
