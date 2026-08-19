@@ -13,28 +13,70 @@ class ReportRepository {
             },
         });
     }
-    async findAll(where?: any) {
-        return prisma.workReport.findMany({
-            where,
-            orderBy: {
-                reportDate: "desc",
-            },
-            select: {
-                id: true,
-                description: true,
-                reportDate: true,
-                createdAt: true,
-                updatedAt: true,
+    async findAll(
+        where?: any,
+        page = 1,
+        limit = 10
+    ) {
+        const skip =
+            (page - 1) * limit;
 
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
+        const [
+            reports,
+            total,
+        ] = await Promise.all([
+            prisma.workReport.findMany({
+                where,
+
+                orderBy: {
+                    reportDate: "desc",
+                },
+
+                skip,
+
+                take: limit,
+
+                select: {
+                    id: true,
+                    description: true,
+                    reportDate: true,
+                    createdAt: true,
+                    updatedAt: true,
+
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        },
                     },
                 },
+            }),
+
+            prisma.workReport.count({
+                where,
+            }),
+        ]);
+
+        const totalPages =
+            Math.ceil(total / limit);
+
+        return {
+            reports,
+
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+
+                hasNextPage:
+                    page < totalPages,
+
+                hasPreviousPage:
+                    page > 1,
             },
-        });
+        };
     }
     async findByDate(
         userId: string,
@@ -70,24 +112,68 @@ class ReportRepository {
             },
         });
     }
+    async history(
+        userId: string,
+        where?: any,
+        page = 1,
+        limit = 10
+    ) {
+        const skip =
+            (page - 1) * limit;
 
-    async history(userId: string, where?: any) {
-        return prisma.workReport.findMany({
-            where: {
-                userId,
-                ...where,
+        const finalWhere = {
+            userId,
+            ...where,
+        };
+
+        const [
+            reports,
+            total,
+        ] = await Promise.all([
+            prisma.workReport.findMany({
+                where: finalWhere,
+
+                orderBy: {
+                    reportDate: "desc",
+                },
+
+                skip,
+
+                take: limit,
+
+                select: {
+                    id: true,
+                    description: true,
+                    reportDate: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            }),
+
+            prisma.workReport.count({
+                where: finalWhere,
+            }),
+        ]);
+
+        const totalPages =
+            Math.ceil(total / limit);
+
+        return {
+            reports,
+
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+
+                hasNextPage:
+                    page < totalPages,
+
+                hasPreviousPage:
+                    page > 1,
             },
-            orderBy: {
-                reportDate: "desc",
-            },
-            select: {
-                id: true,
-                description: true,
-                reportDate: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
+        };
     }
 
     async upsert(

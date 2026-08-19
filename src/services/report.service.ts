@@ -67,13 +67,13 @@ class ReportService {
 
     async history(
         userId: string,
-        date?: string
+        date?: string,
+        page = 1,
+        limit = 10
     ) {
-
         let where = {};
 
         if (date) {
-
             const { start, end } =
                 getISTRange(date);
 
@@ -87,15 +87,22 @@ class ReportService {
 
         return reportRepository.history(
             userId,
-            where
+            where,
+            page,
+            limit
         );
     }
 
-    async all(date?: string) {
+    async all(
+        date?: string,
+        page = 1,
+        limit = 10
+    ) {
         let where = {};
 
         if (date) {
-            const { start, end } = getISTRange(date);
+            const { start, end } =
+                getISTRange(date);
 
             where = {
                 reportDate: {
@@ -105,7 +112,11 @@ class ReportService {
             };
         }
 
-        return reportRepository.findAll(where);
+        return reportRepository.findAll(
+            where,
+            page,
+            limit
+        );
     }
 }
 

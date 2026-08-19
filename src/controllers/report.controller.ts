@@ -31,25 +31,58 @@ export const today = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
-export const history = asyncHandler(async (req: Request, res: Response) => {
+export const history = asyncHandler(
+    async (req: Request, res: Response) => {
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
+        );
 
-    const reports = await reportService.history(
-        req.user.id,
-        req.query.date as string | undefined
-    );
+        const limit = Math.min(
+            Math.max(
+                Number(req.query.limit) || 10,
+                1
+            ),
+            50
+        );
 
-    res.json({
-        success: true,
-        data: reports,
-    });
+        const reports =
+            await reportService.history(
+                req.user.id,
+                req.query.date as string | undefined,
+                page,
+                limit
+            );
 
-});
+        res.json({
+            success: true,
+            data: reports,
+        });
+    }
+);
 
 export const all = asyncHandler(
     async (req: Request, res: Response) => {
-        const reports = await reportService.all(
-            req.query.date as string | undefined
+
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
         );
+
+        const limit = Math.min(
+            Math.max(
+                Number(req.query.limit) || 10,
+                1
+            ),
+            50
+        );
+
+        const reports =
+            await reportService.all(
+                req.query.date as string | undefined,
+                page,
+                limit
+            );
 
         res.json({
             success: true,
