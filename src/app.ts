@@ -15,6 +15,8 @@ import userRoutes from "./routes/user.routes";
 import roleRoutes from "./routes/role.routes";
 import permissionRoutes from "./routes/permission.routes";
 import loginHistoryRoutes from "./routes/loginHistory.routes";
+import publicMonitorRoutes from "./routes/publicMonitor.routes";
+import publicMonitorPublicRoutes from "./routes/publicMonitorPublic.routes";
 
 const app = express();
 
@@ -54,6 +56,14 @@ app.use("/api/permissions", permissionRoutes);
 app.use(
     "/api/login-history",
     loginHistoryRoutes
+);
+app.use(
+    "/api/public-monitor",
+    publicMonitorRoutes
+);
+app.use(
+    "/api/public-monitor/public",
+    publicMonitorPublicRoutes
 );
 
 // 404 should be AFTER all routes

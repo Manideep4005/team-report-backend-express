@@ -9,19 +9,16 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String
-  email        String         @unique
-  password     String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  roleId       String
-  role         Role           @relation(fields: [roleId], references: [id])
-  reports      WorkReport[]
+  id        String       @id @default(uuid())
+  name      String
+  email     String       @unique
+  password  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  roleId    String
+  role      Role         @relation(fields: [roleId], references: [id])
+  reports   WorkReport[]
   loginHistory LoginHistory[]
-
-  publicMonitorLinksCreated PublicMonitorLink[] @relation("PublicMonitorLinksCreated")
-  publicMonitorLinksRevoked PublicMonitorLink[] @relation("PublicMonitorLinksRevoked")
 
   @@index([roleId])
 }
@@ -79,7 +76,7 @@ enum LoginStatus {
 model LoginHistory {
   id        String      @id @default(uuid())
   userId    String?
-  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   email     String
   status    LoginStatus
   ipAddress String?
@@ -89,33 +86,4 @@ model LoginHistory {
   @@index([userId])
   @@index([createdAt])
   @@index([status])
-}
-
-model PublicMonitorLink {
-  id String @id @default(uuid())
-
-  tokenHash String @unique
-
-  createdById String
-
-  // NULL means the link never expires
-  expiresAt DateTime?
-
-  // false means manually revoked
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  revokedAt DateTime?
-
-  revokedById String?
-
-  createdBy User @relation("PublicMonitorLinksCreated", fields: [createdById], references: [id], onDelete: Restrict)
-
-  revokedBy User? @relation("PublicMonitorLinksRevoked", fields: [revokedById], references: [id], onDelete: SetNull)
-
-  @@index([createdById])
-  @@index([expiresAt])
-  @@index([isActive])
-  @@index([createdAt])
 }
