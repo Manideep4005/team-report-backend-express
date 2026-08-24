@@ -1,7 +1,7 @@
 import cors from "cors";
 import { env } from "./env";
 
-const allowedOrigins = [
+export const allowedOrigins = [
     env.CLIENT_URL,
     "http://localhost:5173",
     "http://localhost:3000",

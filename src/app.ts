@@ -17,6 +17,7 @@ import permissionRoutes from "./routes/permission.routes";
 import loginHistoryRoutes from "./routes/loginHistory.routes";
 import publicMonitorRoutes from "./routes/publicMonitor.routes";
 import publicMonitorPublicRoutes from "./routes/publicMonitorPublic.routes";
+import chatRoutes from "./chat/chat.routes";
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
