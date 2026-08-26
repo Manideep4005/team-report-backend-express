@@ -9,9 +9,6 @@ export const createUserSchema = z.object({
         .string()
         .email("Invalid email"),
 
-    password: z
-        .string()
-        .min(6, "Password must be at least 6 characters"),
 
     roleId: z
         .string()

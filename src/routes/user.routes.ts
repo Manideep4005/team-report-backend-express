@@ -47,4 +47,10 @@ router.delete(
     UserController.remove
 );
 
+router.post(
+    "/:id/reset-password",
+    requirePermission("USER_PASSWORD_RESET"),
+    UserController.resetPassword
+);
+
 export default router;

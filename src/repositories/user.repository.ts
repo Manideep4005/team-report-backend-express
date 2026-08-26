@@ -52,6 +52,25 @@ export class UserRepository {
         });
     }
 
+    async updatePassword(
+        id: string,
+        password: string
+    ) {
+
+        return prisma.user.update({
+
+            where: {
+                id,
+            },
+
+            data: {
+                password,
+            },
+
+        });
+
+    }
+
     async findAll() {
         return prisma.user.findMany({
             select: {

@@ -31,7 +31,6 @@ export const create = asyncHandler(
         const user = await userService.create(
             req.body.name,
             req.body.email,
-            req.body.password,
             req.body.roleId,
             req.user.role.name as any
         );
@@ -74,5 +73,46 @@ export const remove = asyncHandler(
             success: true,
             message: "User deleted successfully",
         });
+    }
+);
+
+export const resetPassword = asyncHandler(
+    async (
+        req: Request,
+        res: Response
+    ) => {
+
+        const { id } = req.params;
+
+
+        if (!id) {
+
+            res.status(400).json({
+
+                success: false,
+
+                message:
+                    "User ID is required.",
+
+            });
+
+            return;
+        }
+
+
+        await userService.resetPassword(
+            id as any
+        );
+
+
+        res.json({
+
+            success: true,
+
+            message:
+                "Password reset to the default password successfully.",
+
+        });
+
     }
 );
