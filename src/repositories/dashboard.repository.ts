@@ -4,6 +4,9 @@ class DashboardRepository {
 
     async getUsers() {
         return prisma.user.findMany({
+            where: {
+                deletedAt: null,
+            },
             select: {
                 id: true,
                 name: true,
@@ -21,6 +24,9 @@ class DashboardRepository {
                 reportDate: {
                     gte: start,
                     lt: end,
+                },
+                user: {
+                    deletedAt: null,
                 },
             },
             include: {

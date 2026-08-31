@@ -116,3 +116,32 @@ export const resetPassword = asyncHandler(
 
     }
 );
+
+export const getInactive = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const users =
+            await userService.getInactive();
+
+        res.json({
+            success: true,
+            data: users,
+        });
+    }
+);
+
+export const restore = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const user =
+            await userService.restore(
+                req.params.id as string
+            );
+
+        res.json({
+            success: true,
+            message: "User restored successfully",
+            data: user,
+        });
+    }
+);

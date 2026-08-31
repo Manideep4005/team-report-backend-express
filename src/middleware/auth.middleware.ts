@@ -23,6 +23,7 @@ export async function authenticate(
         const user = await prisma.user.findUnique({
             where: {
                 id: payload.userId,
+                deletedAt: null,
             },
             select: {
                 id: true,

@@ -90,3 +90,47 @@ export const all = asyncHandler(
         });
     }
 );
+
+export const reportUsers = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const users =
+            await reportService.reportUsers();
+
+        res.json({
+            success: true,
+            data: users,
+        });
+    }
+);
+
+export const userReports = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
+        );
+
+        const limit = Math.min(
+            Math.max(
+                Number(req.query.limit) || 10,
+                1
+            ),
+            50
+        );
+
+        const reports =
+            await reportService.userReports(
+                req.params.userId as any,
+                req.query.date as string | undefined,
+                page,
+                limit
+            );
+
+        res.json({
+            success: true,
+            data: reports,
+        });
+    }
+);

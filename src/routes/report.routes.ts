@@ -29,6 +29,18 @@ router.get(
 );
 
 router.get(
+    "/users",
+    requirePermission("REPORT_VIEW_ALL"),
+    ReportController.reportUsers
+);
+
+router.get(
+    "/user/:userId",
+    requirePermission("REPORT_VIEW_ALL"),
+    ReportController.userReports
+);
+
+router.get(
     "/all",
     requirePermission("REPORT_VIEW_ALL"),
     ReportController.all

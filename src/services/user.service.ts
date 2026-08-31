@@ -36,6 +36,12 @@ class UserService {
 
     }
 
+    async getInactive() {
+
+        return userRepository.findInactive();
+
+    }
+
 
     /* ============================================================
        GET BY ID
@@ -77,7 +83,7 @@ class UserService {
     ) {
 
         const existing =
-            await userRepository.findByEmail(
+            await userRepository.findByEmailIncludingDeleted(
                 email
             );
 
@@ -312,10 +318,45 @@ class UserService {
         }
 
 
-        await userRepository.delete(
+        await userRepository.softDelete(
             id
         );
 
+    }
+
+    async restore(
+        id: string
+    ) {
+
+        const user =
+            await userRepository.findByIdIncludingDeleted(
+                id
+            );
+
+
+        if (!user) {
+
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+
+        }
+
+
+        if (!user.deletedAt) {
+
+            throw new ApiError(
+                400,
+                "User is already active"
+            );
+
+        }
+
+
+        return userRepository.restore(
+            id
+        );
     }
 
 }

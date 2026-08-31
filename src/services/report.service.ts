@@ -118,6 +118,39 @@ class ReportService {
             limit
         );
     }
+
+    async reportUsers() {
+        return reportRepository.findReportUsers();
+    }
+
+    async userReports(
+        userId: string,
+        date?: string,
+        page = 1,
+        limit = 10
+    ) {
+        let where = {};
+
+        if (date) {
+            const { start, end } =
+                getISTRange(date);
+
+            where = {
+                reportDate: {
+                    gte: start,
+                    lt: end,
+                },
+            };
+        }
+
+        return reportRepository.findByUser(
+            userId,
+            where,
+            page,
+            limit
+        );
+    }
+
 }
 
 export default new ReportService();

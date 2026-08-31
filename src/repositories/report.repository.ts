@@ -13,6 +13,7 @@ class ReportRepository {
             },
         });
     }
+
     async findAll(
         where?: any,
         page = 1,
@@ -48,6 +49,7 @@ class ReportRepository {
                             id: true,
                             name: true,
                             email: true,
+                            deletedAt: true,
                         },
                     },
                 },
@@ -78,6 +80,7 @@ class ReportRepository {
             },
         };
     }
+
     async findByDate(
         userId: string,
         start: Date,
@@ -206,6 +209,89 @@ class ReportRepository {
                 },
             },
         });
+    }
+
+    async findReportUsers() {
+        return prisma.user.findMany({
+            where: {
+                reports: {
+                    some: {},
+                },
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                deletedAt: true,
+            },
+            orderBy: {
+                name: "asc",
+            },
+        });
+    }
+
+    async findByUser(
+        userId: string,
+        where?: any,
+        page = 1,
+        limit = 10
+    ) {
+        const skip = (page - 1) * limit;
+
+        const finalWhere = {
+            userId,
+            ...where,
+        };
+
+        const [reports, total] = await Promise.all([
+            prisma.workReport.findMany({
+                where: finalWhere,
+
+                orderBy: {
+                    reportDate: "desc",
+                },
+
+                skip,
+                take: limit,
+
+                select: {
+                    id: true,
+                    description: true,
+                    reportDate: true,
+                    createdAt: true,
+                    updatedAt: true,
+
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            deletedAt: true,
+                        },
+                    },
+                },
+            }),
+
+            prisma.workReport.count({
+                where: finalWhere,
+            }),
+        ]);
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            reports,
+
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+            },
+        };
     }
 }
 
