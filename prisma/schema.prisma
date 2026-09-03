@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
@@ -30,9 +29,118 @@ model User {
   conversationMembers  ConversationMember[]
   messages             Message[]
 
+  resumeProfile       ResumeProfile?
+  resumeCustomization ResumeCustomization?
+
   @@index([roleId])
   @@index([deletedAt])
 }
+
+model ResumeProfile {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /*
+   * ============================================================
+   * PERSONAL INFORMATION
+   * ============================================================
+   */
+
+  fullName String?
+  email    String?
+  headline String?
+  phone    String?
+  location String?
+
+  website  String?
+  linkedin String?
+  github   String?
+
+  /*
+   * ============================================================
+   * PROFESSIONAL SUMMARY
+   * ============================================================
+   */
+
+  summary String?
+
+  /*
+   * ============================================================
+   * RESUME CONTENT
+   *
+   * JSON is intentionally used here.
+   *
+   * We don't need separate tables for experience,
+   * education, skills and projects at this stage.
+   * ============================================================
+   */
+
+  experience Json?
+  education  Json?
+  skills     Json?
+  projects   Json?
+
+  /*
+   * ============================================================
+   * TIMESTAMPS
+   * ============================================================
+   */
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ResumeCustomization {
+  id String @id @default(uuid())
+
+  /*
+   * One customization per user.
+   */
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /*
+   * ============================================================
+   * CURRENT CUSTOMIZED RESUME
+   *
+   * This is a snapshot/copy of the master profile that the
+   * user can modify for a particular job application.
+   *
+   * We intentionally DO NOT keep versions.
+   * ============================================================
+   */
+
+  content Json?
+
+  /*
+   * ============================================================
+   * TEMPLATE
+   *
+   * Currently there is only one professional template.
+   *
+   * Keeping this field allows us to support more templates
+   * later without redesigning the table.
+   * ============================================================
+   */
+
+  template String @default("PROFESSIONAL")
+
+  /*
+   * ============================================================
+   * TIMESTAMPS
+   * ============================================================
+   */
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
 
 model Role {
   id          String           @id @default(uuid())
