@@ -21,6 +21,319 @@ export interface ResumeExperience {
     description?: unknown;
 }
 
+export interface ResumeProject {
+    name?: string;
+    description?: unknown;
+    technologies?: unknown;
+    url?: string;
+    github?: string;
+}
+
+
+function normalizeProjects(
+    projectsValue: unknown
+): ResumeProject[] {
+
+    return asArray(projectsValue)
+        .filter(
+            item =>
+                item &&
+                typeof item === "object"
+        )
+        .map(
+            (item: any) => ({
+                name:
+                    text(item.name),
+
+                description:
+                    item.description,
+
+                technologies:
+                    item.technologies,
+
+                url:
+                    text(item.url),
+
+                github:
+                    text(item.github),
+            })
+        )
+        .filter(
+            item =>
+                !!item.name
+        );
+
+}
+
+
+/* ================================================================
+   PROJECTS
+================================================================ */
+
+function drawProjects(
+    doc: PDFKit.PDFDocument,
+    projects: ResumeProject[]
+): void {
+
+    if (
+        projects.length === 0
+    ) {
+        return;
+    }
+
+
+    drawSectionTitle(
+        doc,
+        "Projects"
+    );
+
+
+    for (
+        const project of projects
+    ) {
+
+        /*
+         * Leave enough room for the project heading.
+         */
+
+        ensureSpace(
+            doc,
+            45
+        );
+
+
+        const name =
+            text(
+                project.name
+            );
+
+
+        /*
+         * --------------------------------------------------------
+         * PROJECT HEADER
+         * --------------------------------------------------------
+         *
+         * Project name on the left
+         * URL / GitHub on the right
+         */
+
+        const headingY =
+            doc.y;
+
+
+        /*
+         * Prefer GitHub if available.
+         * Otherwise use the normal project URL.
+         */
+
+        const projectUrl =
+            text(
+                project.github
+            ) ||
+            text(
+                project.url
+            );
+
+
+        /*
+         * Project name
+         */
+
+        if (
+            name
+        ) {
+
+            doc
+                .font(
+                    FONT_BOLD
+                )
+                .fontSize(
+                    8.9
+                )
+                .fillColor(
+                    BLACK
+                )
+                .text(
+                    name,
+                    MARGIN,
+                    headingY,
+                    {
+                        width:
+                            CONTENT_WIDTH -
+                            180,
+
+                        lineBreak:
+                            false,
+                    }
+                );
+
+        }
+
+
+        /*
+         * URL
+         */
+
+        if (
+            projectUrl
+        ) {
+
+            doc
+                .font(
+                    FONT_REGULAR
+                )
+                .fontSize(
+                    8.1
+                )
+                .fillColor(
+                    MUTED
+                )
+                .text(
+                    projectUrl,
+                    MARGIN + 180,
+                    headingY,
+                    {
+                        width:
+                            CONTENT_WIDTH -
+                            180,
+
+                        align:
+                            "right",
+
+                        lineBreak:
+                            false,
+                    }
+                );
+
+        }
+
+
+        /*
+         * Move below project heading.
+         */
+
+        doc.y =
+            headingY +
+            12;
+
+
+        /*
+         * --------------------------------------------------------
+         * TECHNOLOGIES
+         * --------------------------------------------------------
+         */
+
+        const technologies =
+            stringArray(
+                project.technologies
+            );
+
+
+        if (
+            technologies.length > 0
+        ) {
+
+            const technologyY =
+                doc.y;
+
+
+            doc
+                .font(
+                    FONT_BOLD
+                )
+                .fontSize(
+                    8.5
+                )
+                .fillColor(
+                    BLACK
+                )
+                .text(
+                    "Technologies:",
+                    MARGIN,
+                    technologyY,
+                    {
+                        continued:
+                            true,
+
+                        width:
+                            CONTENT_WIDTH,
+
+                        lineBreak:
+                            false,
+                    }
+                );
+
+
+            doc
+                .font(
+                    FONT_REGULAR
+                )
+                .fontSize(
+                    8.5
+                )
+                .fillColor(
+                    TEXT
+                )
+                .text(
+                    ` ${technologies.join(", ")}`,
+                    {
+                        width:
+                            CONTENT_WIDTH,
+
+                        lineGap:
+                            1,
+                    }
+                );
+
+
+            doc.moveDown(
+                0.05
+            );
+
+        }
+
+
+        /*
+         * --------------------------------------------------------
+         * DESCRIPTION
+         * --------------------------------------------------------
+         */
+
+        const description =
+            bullets(
+                project.description
+            );
+
+
+        for (
+            const bullet of description
+        ) {
+
+            drawBullet(
+                doc,
+                bullet
+            );
+
+        }
+
+
+        /*
+         * --------------------------------------------------------
+         * SPACE BETWEEN PROJECTS
+         * --------------------------------------------------------
+         *
+         * Increased from the previous value.
+         *
+         * This gives each project its own visual block.
+         */
+
+        doc.moveDown(
+            0.5
+        );
+
+    }
+
+}
 
 export interface ResumeEducation {
     institution?: string;
@@ -1820,6 +2133,10 @@ export function generateResumePdf(
             resume.education
         );
 
+    const projects =
+        normalizeProjects(
+            resume.projects
+        );
 
     const skills =
         normalizeSkills(
@@ -1890,6 +2207,11 @@ export function generateResumePdf(
         experience
     );
 
+
+    drawProjects(
+        doc,
+        projects
+    );
 
     /* ============================================================
        EDUCATION
