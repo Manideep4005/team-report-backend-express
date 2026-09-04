@@ -1,343 +1,319 @@
-import resumeRepository
-    from "../repositories/resume.repository";
+import resumeRepository from "../repositories/resume.repository";
 
-import { ApiError }
-    from "../utils/ApiError";
-
+import { ApiError } from "../utils/ApiError";
 
 class ResumeService {
+  /* ============================================================
+       SKILLS ORDER
+    ============================================================ */
 
+  private normalizeSkillsOrder(skills: any) {
+    /*
+     * --------------------------------------------------------
+     * Invalid / empty skills
+     * --------------------------------------------------------
+     */
 
-    /* ============================================================
+    if (!skills || typeof skills !== "object" || Array.isArray(skills)) {
+      return {};
+    }
+
+    /*
+     * --------------------------------------------------------
+     * Get actual skill categories.
+     *
+     * __order is metadata and must NEVER be treated
+     * as a skill category.
+     * --------------------------------------------------------
+     */
+
+    const categories = Object.keys(skills).filter(
+      (category) => category !== "__order",
+    );
+
+    /*
+     * --------------------------------------------------------
+     * Read existing explicit order.
+     *
+     * Older records will not have __order.
+     * --------------------------------------------------------
+     */
+
+    const storedOrder = Array.isArray(skills.__order)
+      ? skills.__order.filter(
+          (category: unknown): category is string =>
+            typeof category === "string" &&
+            category.trim().length > 0 &&
+            category !== "__order",
+        )
+      : [];
+
+    /*
+     * --------------------------------------------------------
+     * Build final order.
+     *
+     * 1. Categories from __order
+     * 2. Any new categories not yet in __order
+     *
+     * This makes the code backwards compatible.
+     * --------------------------------------------------------
+     */
+
+    const orderedCategories = [
+      ...storedOrder.filter((category: any) => categories.includes(category)),
+
+      ...categories.filter((category) => !storedOrder.includes(category)),
+    ];
+
+    /*
+     * --------------------------------------------------------
+     * Rebuild skills object.
+     * --------------------------------------------------------
+     */
+
+    const result: Record<string, any> = {};
+
+    for (const category of orderedCategories) {
+      result[category] = skills[category];
+    }
+
+    /*
+     * --------------------------------------------------------
+     * Save explicit order.
+     * --------------------------------------------------------
+     */
+
+    result.__order = orderedCategories;
+
+    return result;
+  }
+
+  /* ============================================================
        MASTER PROFILE
     ============================================================ */
 
-    async getProfile(
-        userId: string
-    ) {
+  async getProfile(userId: string) {
+    const profile = await resumeRepository.findProfileByUserId(userId);
 
-        const profile =
-            await resumeRepository.findProfileByUserId(
-                userId
-            );
+    /*
+     * No profile yet is not an error.
+     *
+     * Frontend can show an empty profile form.
+     */
 
-
-        /*
-         * No profile yet is not an error.
-         *
-         * Frontend can show an empty profile form.
-         */
-
-        if (!profile) {
-
-            return null;
-
-        }
-
-
-        return profile;
-
+    if (!profile) {
+      return null;
     }
 
+    return profile;
+  }
 
-    async saveProfile(
-        userId: string,
-        data: any
-    ) {
+  async saveProfile(userId: string, data: any) {
+    /*
+     * --------------------------------------------------------
+     * Normalize skills before saving.
+     *
+     * This is the first important backend protection.
+     * --------------------------------------------------------
+     */
 
-        const existing =
-            await resumeRepository.findProfileByUserId(
-                userId
-            );
+    const normalizedData = {
+      ...data,
 
+      skills: this.normalizeSkillsOrder(data.skills),
+    };
 
-        if (existing) {
+    const existing = await resumeRepository.findProfileByUserId(userId);
 
-            return resumeRepository.updateProfile(
-                userId,
-                data
-            );
-
-        }
-
-
-        return resumeRepository.createProfile(
-            userId,
-            data
-        );
-
+    if (existing) {
+      return resumeRepository.updateProfile(userId, normalizedData);
     }
 
+    return resumeRepository.createProfile(userId, normalizedData);
+  }
 
-    /* ============================================================
+  /* ============================================================
        CUSTOMIZATION
     ============================================================ */
 
-    async getCustomization(
-        userId: string
-    ) {
+  async getCustomization(userId: string) {
+    return resumeRepository.findCustomizationByUserId(userId);
+  }
 
-        return resumeRepository.findCustomizationByUserId(
-            userId
-        );
-
-    }
-
-
-    /* ============================================================
+  /* ============================================================
        CREATE CUSTOMIZATION FROM MASTER
     ============================================================ */
 
-    async createCustomizationFromProfile(
-        userId: string
-    ) {
+  async createCustomizationFromProfile(userId: string) {
+    const profile = await resumeRepository.findProfileByUserId(userId);
 
-        const profile =
-            await resumeRepository.findProfileByUserId(
-                userId
-            );
-
-
-        if (!profile) {
-
-            throw new ApiError(
-                404,
-                "Resume profile not found. Please complete your master resume first."
-            );
-
-        }
-
-
-        /*
-         * Only copy resume content.
-         *
-         * Database IDs and timestamps from the
-         * master profile are NOT copied.
-         */
-
-        const content = {
-
-            fullName:
-                profile.fullName ?? "",
-
-            email:
-                profile.email ?? "",
-
-            headline:
-                profile.headline ?? "",
-
-            phone:
-                profile.phone ?? "",
-
-            location:
-                profile.location ?? "",
-
-            website:
-                profile.website ?? "",
-
-            linkedin:
-                profile.linkedin ?? "",
-
-            github:
-                profile.github ?? "",
-
-            summary:
-                profile.summary ?? "",
-
-            experience:
-                profile.experience ?? [],
-
-            education:
-                profile.education ?? [],
-
-            skills:
-                profile.skills ?? {},
-
-            projects:
-                profile.projects ?? [],
-
-        };
-
-
-        /*
-         * Upsert guarantees:
-         *
-         * One user
-         *     ↓
-         * One customization
-         */
-
-        return resumeRepository.upsertCustomization(
-            userId,
-            content as any
-        );
-
+    if (!profile) {
+      throw new ApiError(
+        404,
+        "Resume profile not found. Please complete your master resume first.",
+      );
     }
 
+    /*
+     * Only copy resume content.
+     *
+     * Database IDs and timestamps from the
+     * master profile are NOT copied.
+     */
 
-    /* ============================================================
+    const content = {
+      fullName: profile.fullName ?? "",
+
+      email: profile.email ?? "",
+
+      headline: profile.headline ?? "",
+
+      phone: profile.phone ?? "",
+
+      location: profile.location ?? "",
+
+      website: profile.website ?? "",
+
+      linkedin: profile.linkedin ?? "",
+
+      github: profile.github ?? "",
+
+      summary: profile.summary ?? "",
+
+      experience: profile.experience ?? [],
+
+      education: profile.education ?? [],
+
+      skills: this.normalizeSkillsOrder(profile.skills),
+
+      projects: profile.projects ?? [],
+    };
+
+    /*
+     * Upsert guarantees:
+     *
+     * One user
+     *     ↓
+     * One customization
+     */
+
+    return resumeRepository.upsertCustomization(userId, content as any);
+  }
+
+  /* ============================================================
        SAVE CUSTOMIZATION
     ============================================================ */
 
-    async saveCustomization(
-        userId: string,
-        content: any
-    ) {
+  async saveCustomization(userId: string, content: any) {
+    const existing = await resumeRepository.findCustomizationByUserId(userId);
 
-        const existing =
-            await resumeRepository.findCustomizationByUserId(
-                userId
-            );
-
-
-        if (!existing) {
-
-            throw new ApiError(
-                404,
-                "Resume customization not found. Create it from your master resume first."
-            );
-
-        }
-
-
-        return resumeRepository.updateCustomization(
-            userId,
-            content
-        );
-
+    if (!existing) {
+      throw new ApiError(
+        404,
+        "Resume customization not found. Create it from your master resume first.",
+      );
     }
 
-    async getResumeForPdf(
-        userId: string
-    ) {
+    /*
+     * Normalize skills before saving customized resume.
+     */
 
-        const profile =
-            await resumeRepository.findProfileByUserId(
-                userId
-            );
+    const normalizedContent = {
+      ...content,
 
+      skills: this.normalizeSkillsOrder(content?.skills),
+    };
 
-        if (!profile) {
+    return resumeRepository.updateCustomization(userId, normalizedContent);
+  }
 
-            throw new ApiError(
-                404,
-                "Resume profile not found"
-            );
-        }
+  /* ============================================================
+       GET RESUME FOR PDF
+    ============================================================ */
 
+  async getResumeForPdf(userId: string) {
+    const profile = await resumeRepository.findProfileByUserId(userId);
 
-        const customization =
-            await resumeRepository.findCustomizationByUserId(
-                userId
-            );
-
-
-        /*
-         * ========================================================
-         * CUSTOMIZATION EXISTS
-         * ========================================================
-         */
-
-        if (
-            customization &&
-            customization.content
-        ) {
-
-            return {
-                ...this.toPdfData(
-                    customization.content,
-                    profile
-                ),
-            };
-        }
-
-
-        /*
-         * ========================================================
-         * MASTER PROFILE
-         * ========================================================
-         */
-
-        return {
-            ...this.toPdfData(
-                profile,
-                profile
-            ),
-        };
+    if (!profile) {
+      throw new ApiError(404, "Resume profile not found");
     }
 
+    const customization =
+      await resumeRepository.findCustomizationByUserId(userId);
 
-    /* ============================================================
+    /*
+     * ========================================================
+     * CUSTOMIZATION EXISTS
+     * ========================================================
+     */
+
+    if (customization && customization.content) {
+      return {
+        ...this.toPdfData(customization.content, profile),
+      };
+    }
+
+    /*
+     * ========================================================
+     * MASTER PROFILE
+     * ========================================================
+     */
+
+    return {
+      ...this.toPdfData(profile, profile),
+    };
+  }
+
+  /* ============================================================
        MAP TO PDF DATA
     ============================================================ */
 
-    private toPdfData(
-        content: any,
-        profile: any
-    ) {
+  private toPdfData(content: any, profile: any) {
+    const getValue = (field: string) => {
+      const customValue = content?.[field];
 
-        const getValue = (
-            field: string
-        ) => {
+      if (customValue !== undefined && customValue !== null) {
+        return customValue;
+      }
 
-            const customValue =
-                content?.[field];
+      return profile?.[field];
+    };
 
-            if (
-                customValue !== undefined &&
-                customValue !== null
-            ) {
-                return customValue;
-            }
+    return {
+      fullName: getValue("fullName") ?? "",
 
-            return profile?.[field];
-        };
+      headline: getValue("headline") ?? "",
 
+      email: getValue("email") ?? "",
 
-        return {
+      phone: getValue("phone") ?? "",
 
-            fullName:
-                getValue("fullName") ?? "",
+      location: getValue("location") ?? "",
 
-            headline:
-                getValue("headline") ?? "",
+      website: getValue("website") ?? "",
 
-            email:
-                getValue("email") ?? "",
+      linkedin: getValue("linkedin") ?? "",
 
-            phone:
-                getValue("phone") ?? "",
+      github: getValue("github") ?? "",
 
-            location:
-                getValue("location") ?? "",
+      summary: getValue("summary") ?? "",
 
-            website:
-                getValue("website") ?? "",
+      experience: getValue("experience") ?? [],
 
-            linkedin:
-                getValue("linkedin") ?? "",
+      education: getValue("education") ?? [],
 
-            github:
-                getValue("github") ?? "",
+      /*
+       * Normalize one more time before PDF generation.
+       *
+       * This guarantees that even old/customized data
+       * reaches the PDF generator with the correct order.
+       */
 
-            summary:
-                getValue("summary") ?? "",
+      skills: this.normalizeSkillsOrder(getValue("skills")),
 
-            experience:
-                getValue("experience") ?? [],
-
-            education:
-                getValue("education") ?? [],
-
-            skills:
-                getValue("skills") ?? {},
-
-            projects:
-                getValue("projects") ?? [],
-        };
-    }
-
+      projects: getValue("projects") ?? [],
+    };
+  }
 }
-
 
 export default new ResumeService();
