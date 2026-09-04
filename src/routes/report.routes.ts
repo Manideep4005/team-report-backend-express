@@ -29,6 +29,18 @@ router.get(
 );
 
 router.get(
+    "/export/own",
+    requirePermission("REPORT_EXPORT_OWN"),
+    ReportController.exportOwn
+);
+
+router.get(
+    "/export/all",
+    requirePermission("REPORT_EXPORT_ALL"),
+    ReportController.exportAll
+);
+
+router.get(
     "/users",
     requirePermission("REPORT_VIEW_ALL"),
     ReportController.reportUsers
@@ -45,4 +57,5 @@ router.get(
     requirePermission("REPORT_VIEW_ALL"),
     ReportController.all
 );
+
 export default router;

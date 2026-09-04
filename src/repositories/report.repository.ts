@@ -293,6 +293,69 @@ class ReportRepository {
             },
         };
     }
+
+
+    async exportOwn(
+        userId: string,
+        where?: any
+    ) {
+        const finalWhere = {
+            userId,
+            ...where,
+        };
+
+        return prisma.workReport.findMany({
+            where: finalWhere,
+
+            orderBy: {
+                reportDate: "desc",
+            },
+
+            select: {
+                id: true,
+                description: true,
+                reportDate: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+    }
+
+    async exportAll(
+        where?: any
+    ) {
+        return prisma.workReport.findMany({
+            where,
+
+            orderBy: [
+                {
+                    reportDate: "desc",
+                },
+                {
+                    user: {
+                        name: "asc",
+                    },
+                },
+            ],
+
+            select: {
+                id: true,
+                description: true,
+                reportDate: true,
+                createdAt: true,
+                updatedAt: true,
+
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        deletedAt: true,
+                    },
+                },
+            },
+        });
+    }
 }
 
 export default new ReportRepository();

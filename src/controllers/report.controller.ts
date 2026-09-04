@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import reportService from "../services/report.service";
 import { asyncHandler } from "../utils/asyncHandler";
+import reportExportService from "../services/reportExport.service";
+import { reportExportQuerySchema } from "../validations/report-export.validation";
 
 export const save = asyncHandler(async (req: Request, res: Response) => {
 
@@ -132,5 +134,110 @@ export const userReports = asyncHandler(
             success: true,
             data: reports,
         });
+    }
+);
+
+export const exportOwn = asyncHandler(
+    async (
+        req: Request,
+        res: Response
+    ) => {
+        const parsed =
+            reportExportQuerySchema.safeParse(
+                req.query
+            );
+
+        if (!parsed.success) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Invalid export parameters",
+                errors:
+                    parsed.error.flatten(),
+            });
+        }
+
+        const workbook =
+            await reportExportService.exportOwn(
+                req.user.id,
+                parsed.data
+            );
+
+        const buffer =
+            await workbook.xlsx.writeBuffer();
+
+        const period =
+            parsed.data.filter === "month"
+                ? parsed.data.month
+                : parsed.data.filter === "date"
+                    ? parsed.data.date
+                    : "all";
+
+        const filename =
+            `reports_${period}.xlsx`;
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${filename}"`
+        );
+
+        res.send(buffer);
+    }
+);
+
+export const exportAll = asyncHandler(
+    async (
+        req: Request,
+        res: Response
+    ) => {
+        const parsed =
+            reportExportQuerySchema.safeParse(
+                req.query
+            );
+
+        if (!parsed.success) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Invalid export parameters",
+                errors:
+                    parsed.error.flatten(),
+            });
+        }
+
+        const workbook =
+            await reportExportService.exportAll(
+                parsed.data
+            );
+
+        const buffer =
+            await workbook.xlsx.writeBuffer();
+
+        const period =
+            parsed.data.filter === "month"
+                ? parsed.data.month
+                : parsed.data.filter === "date"
+                    ? parsed.data.date
+                    : "all";
+
+        const filename =
+            `all_reports_${period}.xlsx`;
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${filename}"`
+        );
+
+        res.send(buffer);
     }
 );
