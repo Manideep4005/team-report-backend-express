@@ -7,137 +7,80 @@ import type {
 
 class ResumeRepository {
 
-
     /* ============================================================
        PROFILE
     ============================================================ */
 
     async findProfileByUserId(
-        userId: string
+        userId: string,
     ) {
-
         return prisma.resumeProfile.findUnique({
-
             where: {
                 userId,
             },
-
         });
-
     }
 
 
     async createProfile(
         userId: string,
-        data: any
+        data: ResumeProfileContent,
     ) {
-
         return prisma.resumeProfile.create({
-
             data: {
-
                 userId,
 
-                fullName:
-                    data.fullName,
+                fullName: data.fullName ?? null,
 
-                email: data.email,
+                email: data.email ?? null,
 
-                headline:
-                    data.headline,
+                headline: data.headline ?? null,
 
-                phone:
-                    data.phone,
+                phone: data.phone ?? null,
 
-                location:
-                    data.location,
+                location: data.location ?? null,
 
-                website:
-                    data.website,
+                website: data.website ?? null,
 
-                linkedin:
-                    data.linkedin,
+                linkedin: data.linkedin ?? null,
 
-                github:
-                    data.github,
+                github: data.github ?? null,
 
-                summary:
-                    data.summary,
-
-                experience:
-                    data.experience,
-
-                education:
-                    data.education,
-
-                skills:
-                    data.skills,
-
-                projects:
-                    data.projects,
-
+                sections: (data.sections ?? []) as any,
             },
-
         });
-
     }
 
 
     async updateProfile(
         userId: string,
-        data: any
+        data: ResumeProfileContent,
     ) {
-
         return prisma.resumeProfile.update({
-
             where: {
                 userId,
             },
 
             data: {
+                fullName: data.fullName ?? null,
 
-                fullName:
-                    data.fullName,
+                email: data.email ?? null,
 
-                email: data.email,
+                headline: data.headline ?? null,
 
-                headline:
-                    data.headline,
+                phone: data.phone ?? null,
 
-                phone:
-                    data.phone,
+                location: data.location ?? null,
 
-                location:
-                    data.location,
+                website: data.website ?? null,
 
-                website:
-                    data.website,
+                linkedin: data.linkedin ?? null,
 
-                linkedin:
-                    data.linkedin,
+                github: data.github ?? null,
 
-                github:
-                    data.github,
-
-                summary:
-                    data.summary,
-
-                experience:
-                    data.experience,
-
-                education:
-                    data.education,
-
-                skills:
-                    data.skills,
-
-                projects:
-                    data.projects,
-
+                sections: (data.sections ?? []) as any,
             },
-
         });
-
     }
 
 
@@ -146,100 +89,72 @@ class ResumeRepository {
     ============================================================ */
 
     async findCustomizationByUserId(
-        userId: string
+        userId: string,
     ) {
-
         return prisma.resumeCustomization.findUnique({
-
             where: {
                 userId,
             },
-
         });
-
     }
 
 
     async createCustomization(
         userId: string,
-        content: ResumeProfileContent
+        content: ResumeProfileContent,
+        template = "PROFESSIONAL",
     ) {
-
         return prisma.resumeCustomization.create({
-
             data: {
-
                 userId,
 
                 content: content as any,
 
-                template:
-                    "PROFESSIONAL",
-
+                template,
             },
-
         });
-
     }
 
 
     async updateCustomization(
         userId: string,
-        content: ResumeProfileContent
+        content: ResumeProfileContent,
     ) {
-
         return prisma.resumeCustomization.update({
-
             where: {
                 userId,
             },
 
             data: {
-
-                content:
-                    content as any,
-
+                content: content as any,
             },
-
         });
-
     }
 
 
     async upsertCustomization(
         userId: string,
-        content: ResumeProfileContent
+        content: ResumeProfileContent,
+        template = "PROFESSIONAL",
     ) {
-
         return prisma.resumeCustomization.upsert({
-
             where: {
                 userId,
             },
 
             create: {
-
                 userId,
 
-                content:
-                    content as any,
+                content: content as any,
 
-                template:
-                    "PROFESSIONAL",
-
+                template,
             },
 
             update: {
-
-                content:
-                    content as any,
-
+                content: content as any,
             },
-
         });
-
     }
-
 }
 
 

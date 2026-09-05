@@ -44,7 +44,7 @@ model ResumeProfile {
 
   /*
    * ============================================================
-   * PERSONAL INFORMATION
+   * PERSONAL / HEADER INFORMATION
    * ============================================================
    */
 
@@ -60,33 +60,24 @@ model ResumeProfile {
 
   /*
    * ============================================================
-   * PROFESSIONAL SUMMARY
-   * ============================================================
-   */
-
-  summary String?
-
-  /*
-   * ============================================================
-   * RESUME CONTENT
+   * DYNAMIC RESUME SECTIONS
    *
-   * JSON is intentionally used here.
+   * Section ordering is determined by the array order.
    *
-   * We don't need separate tables for experience,
-   * education, skills and projects at this stage.
+   * Example:
+   *
+   * sections: [
+   *   Summary,
+   *   Experience,
+   *   Skills,
+   *   Projects,
+   *   Achievements
+   * ]
+   *
    * ============================================================
    */
 
-  experience Json?
-  education  Json?
-  skills     Json?
-  projects   Json?
-
-  /*
-   * ============================================================
-   * TIMESTAMPS
-   * ============================================================
-   */
+  sections Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,46 +85,30 @@ model ResumeProfile {
   @@index([userId])
 }
 
+
 model ResumeCustomization {
   id String @id @default(uuid())
 
   /*
-   * One customization per user.
+   * One customized resume per user.
    */
+
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /*
    * ============================================================
-   * CURRENT CUSTOMIZED RESUME
-   *
-   * This is a snapshot/copy of the master profile that the
-   * user can modify for a particular job application.
-   *
-   * We intentionally DO NOT keep versions.
+   * CUSTOMIZED RESUME CONTENT
    * ============================================================
    */
 
   content Json?
 
   /*
-   * ============================================================
-   * TEMPLATE
-   *
-   * Currently there is only one professional template.
-   *
-   * Keeping this field allows us to support more templates
-   * later without redesigning the table.
-   * ============================================================
+   * Resume template.
    */
 
   template String @default("PROFESSIONAL")
-
-  /*
-   * ============================================================
-   * TIMESTAMPS
-   * ============================================================
-   */
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

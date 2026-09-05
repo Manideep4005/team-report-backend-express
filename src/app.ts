@@ -20,8 +20,6 @@ import publicMonitorPublicRoutes from "./routes/publicMonitorPublic.routes";
 import chatRoutes from "./chat/chat.routes";
 import resumeRoutes
     from "./routes/resume.routes";
-import resumeCustomizationRoutes
-    from "./routes/resumeCustomization.routes";
 
 
 const app = express();
@@ -76,10 +74,7 @@ app.use(
     "/api/resume",
     resumeRoutes
 );
-app.use(
-    "/api/resume/customization",
-    resumeCustomizationRoutes
-);
+
 
 // 404 should be AFTER all routes
 app.use(notFoundMiddleware);

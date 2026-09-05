@@ -1,77 +1,128 @@
-/* ================================================================
-   EXPERIENCE
-================================================================ */
+/*
+ * ============================================================
+ * RESUME SECTION TYPES
+ * ============================================================
+ */
 
-export interface ResumeExperience {
-    company: string;
-    position: string;
-    location?: string;
+export const RESUME_SECTION_TYPES = [
+    "SUMMARY",
+    "EXPERIENCE",
+    "EDUCATION",
+    "SKILLS",
+    "PROJECTS",
+    "ACHIEVEMENTS",
+    "CERTIFICATIONS",
+    "AWARDS",
+    "LANGUAGES",
+    "PUBLICATIONS",
+    "VOLUNTEER",
+    "CUSTOM",
+] as const;
 
-    startDate: string;
-    endDate?: string;
-
-    currentlyWorking?: boolean;
-
-    description: string[];
-}
-
-
-/* ================================================================
-   EDUCATION
-================================================================ */
-
-export interface ResumeEducation {
-    institution: string;
-    degree: string;
-
-    fieldOfStudy?: string;
-
-    startDate?: string;
-    endDate?: string;
-
-    grade?: string;
-
-    location?: string;
-}
+export type ResumeSectionType =
+    (typeof RESUME_SECTION_TYPES)[number];
 
 
-/* ================================================================
-   SKILLS
-================================================================ */
+/*
+ * ============================================================
+ * GENERIC RESUME SECTION
+ * ============================================================
+ */
 
-export interface ResumeSkills {
-    [category: string]: string[];
-}
-
-
-/* ================================================================
-   PROJECT
-================================================================ */
-
-export interface ResumeProject {
-    name: string;
-
-    description?: string;
-
-    technologies?: string[];
-
-    url?: string;
-
-    github?: string;
-}
-
-
-/* ================================================================
-   MASTER PROFILE
-================================================================ */
-
-export interface ResumeProfile {
+export interface ResumeSection {
+    /*
+     * Unique identifier for this section.
+     *
+     * Example:
+     * "experience"
+     * "projects"
+     * "achievements"
+     * "custom-abc123"
+     */
 
     id: string;
 
-    userId: string;
+    /*
+     * Determines how the section is interpreted/rendered.
+     */
 
+    type: ResumeSectionType;
+
+    /*
+     * User-visible heading.
+     *
+     * Example:
+     * "Experience"
+     * "Personal Projects"
+     */
+
+    title: string;
+
+    /*
+     * Whether this section should currently be shown.
+     */
+
+    visible: boolean;
+
+    /*
+     * Section-specific data.
+     *
+     * Ordering inside arrays is preserved.
+     */
+
+    content: unknown;
+}
+
+
+/*
+ * ============================================================
+ * SKILLS
+ * ============================================================
+ */
+
+export interface ResumeSkillCategory {
+    /*
+     * Unique category ID.
+     */
+
+    id: string;
+
+    /*
+     * Display name.
+     *
+     * Example:
+     * "Programming Languages"
+     */
+
+    name: string;
+
+    /*
+     * Array order determines skill order.
+     */
+
+    items: string[];
+}
+
+
+export interface ResumeSkillsContent {
+    /*
+     * Array order determines category order.
+     */
+
+    categories: ResumeSkillCategory[];
+}
+
+
+/*
+ * ============================================================
+ * PERSONAL / HEADER INFORMATION
+ * ============================================================
+ */
+
+export interface ResumePersonalInfo {
     fullName?: string | null;
+
+    email?: string | null;
 
     headline?: string | null;
 
@@ -84,72 +135,31 @@ export interface ResumeProfile {
     linkedin?: string | null;
 
     github?: string | null;
-
-    summary?: string | null;
-
-    experience?: ResumeExperience[] | null;
-
-    education?: ResumeEducation[] | null;
-
-    skills?: ResumeSkills | null;
-
-    projects?: ResumeProject[] | null;
-
-    createdAt: string;
-
-    updatedAt: string;
 }
 
 
-/* ================================================================
-   CUSTOMIZATION
-================================================================ */
+/*
+ * ============================================================
+ * MASTER PROFILE CONTENT
+ * ============================================================
+ */
 
-export interface ResumeCustomization {
+export interface ResumeProfileContent
+    extends ResumePersonalInfo {
 
-    id: string;
+    /*
+     * Array order determines section order.
+     */
 
-    userId: string;
-
-    content: ResumeProfileContent | null;
-
-    template: string;
-
-    createdAt: string;
-
-    updatedAt: string;
+    sections?: ResumeSection[];
 }
 
 
-/* ================================================================
-   CONTENT
-================================================================ */
+/*
+ * ============================================================
+ * CUSTOMIZATION CONTENT
+ * ============================================================
+ */
 
-export interface ResumeProfileContent {
-
-    fullName?: string;
-
-    email?: string;
-
-    headline?: string;
-
-    phone?: string;
-
-    location?: string;
-
-    website?: string;
-
-    linkedin?: string;
-
-    github?: string;
-
-    summary?: string;
-
-    experience?: ResumeExperience[];
-
-    education?: ResumeEducation[];
-
-    skills?: ResumeSkills;
-
-    projects?: ResumeProject[];
-}
+export interface ResumeCustomizationContent
+    extends ResumeProfileContent { }

@@ -7,259 +7,55 @@ import path from "path";
    TYPES
 ================================================================ */
 
-export interface ResumeExperience {
-  company?: string;
-  position?: string;
-  location?: string;
+export type ResumeSectionType =
+  | "SUMMARY"
+  | "EXPERIENCE"
+  | "EDUCATION"
+  | "SKILLS"
+  | "PROJECTS"
+  | "ACHIEVEMENTS"
+  | "CERTIFICATIONS"
+  | "AWARDS"
+  | "LANGUAGES"
+  | "PUBLICATIONS"
+  | "VOLUNTEER"
+  | "CUSTOM";
 
-  startDate?: string;
-  endDate?: string;
-
-  currentlyWorking?: boolean;
-
-  description?: unknown;
-}
-
-export interface ResumeProject {
-  name?: string;
-  description?: unknown;
-  technologies?: unknown;
-  url?: string;
-  github?: string;
-}
-
-function normalizeProjects(projectsValue: unknown): ResumeProject[] {
-  return asArray(projectsValue)
-    .filter((item) => item && typeof item === "object")
-    .map((item: any) => ({
-      name: text(item.name),
-
-      description: item.description,
-
-      technologies: item.technologies,
-
-      url: text(item.url),
-
-      github: text(item.github),
-    }))
-    .filter((item) => !!item.name);
-}
-
-/* ================================================================
-   PROJECTS
-================================================================ */
-
-function drawProjects(
-  doc: PDFKit.PDFDocument,
-  projects: ResumeProject[],
-): void {
-  if (projects.length === 0) {
-    return;
-  }
-
-  drawSectionTitle(doc, "Projects");
-
-  for (const project of projects) {
-    /*
-     * Leave enough room for the project heading.
-     */
-
-    ensureSpace(doc, 45);
-
-    const name = text(project.name);
-
-    /*
-     * --------------------------------------------------------
-     * PROJECT HEADER
-     * --------------------------------------------------------
-     *
-     * Project name on the left
-     * URL / GitHub on the right
-     */
-
-    const headingY = doc.y;
-
-    /*
-     * Prefer GitHub if available.
-     * Otherwise use the normal project URL.
-     */
-
-    const projectUrl = text(project.github) || text(project.url);
-
-    /*
-     * Project name
-     */
-
-    if (name) {
-      doc
-        .font(FONT_BOLD)
-        .fontSize(8.9)
-        .fillColor(BLACK)
-        .text(name, MARGIN, headingY, {
-          width: CONTENT_WIDTH - 180,
-
-          lineBreak: false,
-        });
-    }
-
-    /*
-     * URL
-     */
-
-    if (projectUrl) {
-      doc
-        .font(FONT_REGULAR)
-        .fontSize(8.1)
-        .fillColor(MUTED)
-        .text(projectUrl, MARGIN + 180, headingY, {
-          width: CONTENT_WIDTH - 180,
-
-          align: "right",
-
-          lineBreak: false,
-        });
-    }
-
-    /*
-     * Move below project heading.
-     */
-
-    doc.y = headingY + 12;
-
-    /*
-     * --------------------------------------------------------
-     * TECHNOLOGIES
-     * --------------------------------------------------------
-     */
-
-    const technologies = stringArray(project.technologies);
-
-    if (technologies.length > 0) {
-      const technologyY = doc.y;
-
-      doc
-        .font(FONT_BOLD)
-        .fontSize(8.5)
-        .fillColor(BLACK)
-        .text("Technologies:", MARGIN, technologyY, {
-          continued: true,
-
-          width: CONTENT_WIDTH,
-
-          lineBreak: false,
-        });
-
-      doc
-        .font(FONT_REGULAR)
-        .fontSize(8.5)
-        .fillColor(TEXT)
-        .text(` ${technologies.join(", ")}`, {
-          width: CONTENT_WIDTH,
-
-          lineGap: 1,
-        });
-
-      doc.moveDown(0.05);
-    }
-
-    /*
-     * --------------------------------------------------------
-     * DESCRIPTION
-     * --------------------------------------------------------
-     */
-
-    const description = bullets(project.description);
-
-    for (const bullet of description) {
-      drawBullet(doc, bullet);
-    }
-
-    /*
-     * --------------------------------------------------------
-     * SPACE BETWEEN PROJECTS
-     * --------------------------------------------------------
-     *
-     * Increased from the previous value.
-     *
-     * This gives each project its own visual block.
-     */
-
-    doc.moveDown(0.5);
-  }
-}
-
-export interface ResumeEducation {
-  institution?: string;
-  degree?: string;
-
-  fieldOfStudy?: string;
-
-  startDate?: string;
-  endDate?: string;
-
-  grade?: string;
-
-  location?: string;
-}
-
-export interface ResumeProject {
-  name?: string;
-  description?: unknown;
-  technologies?: unknown;
-  url?: string;
-  github?: string;
+export interface ResumeSection {
+  id: string;
+  type: ResumeSectionType;
+  title: string;
+  visible: boolean;
+  content: unknown;
 }
 
 export interface ResumePdfData {
-  fullName?: string;
+  fullName?: string | null;
+  headline?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  website?: string | null;
+  linkedin?: string | null;
+  github?: string | null;
 
-  headline?: string;
-
-  email?: string;
-
-  phone?: string;
-
-  location?: string;
-
-  website?: string;
-
-  linkedin?: string;
-
-  github?: string;
-
-  summary?: string;
-
-  experience?: unknown;
-
-  education?: unknown;
-
-  skills?: unknown;
-
-  /*
-   * Kept here so the existing API/data structure
-   * does not break.
-   *
-   * Projects are intentionally NOT rendered.
-   */
-  projects?: unknown;
+  sections?: ResumeSection[] | null;
 }
 
 /* ================================================================
-   A4 PAGE
+   PAGE
 ================================================================ */
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 
 /*
- * 1 cm = 28.3465 points
+ * 0.5 cm = approximately 14.17 points
  *
- * IMPORTANT:
- * Previous version used 0.5 cm.
- * This version intentionally uses 1 cm.
+ * This restores the requested compact margin.
  */
 
-const MARGIN = 28.35;
+const MARGIN = 14.17;
 
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
@@ -273,24 +69,26 @@ const MUTED = "#555555";
 const LINE = "#555555";
 
 /* ================================================================
-   CALIBRI FONTS
+   CALIBRI
 ================================================================ */
 
 const FONT_DIR = path.join(__dirname, "fonts");
 
 const FONT_REGULAR = path.join(FONT_DIR, "CALIBRI.TTF");
-
 const FONT_BOLD = path.join(FONT_DIR, "CALIBRIB.TTF");
-
 const FONT_ITALIC = path.join(FONT_DIR, "CALIBRII.TTF");
-
 const FONT_BOLD_ITALIC = path.join(FONT_DIR, "CALIBRIZ.TTF");
 
 /* ================================================================
    VERIFY FONTS
 ================================================================ */
 
-const requiredFonts = [FONT_REGULAR, FONT_BOLD, FONT_ITALIC, FONT_BOLD_ITALIC];
+const requiredFonts = [
+  FONT_REGULAR,
+  FONT_BOLD,
+  FONT_ITALIC,
+  FONT_BOLD_ITALIC,
+];
 
 for (const fontFile of requiredFonts) {
   if (!fs.existsSync(fontFile)) {
@@ -314,6 +112,20 @@ function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function objectValue(
+  value: unknown,
+): Record<string, unknown> | null {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
 function stringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -333,14 +145,22 @@ function bullets(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value
       .filter((item) => typeof item === "string")
-      .map((item) => item.replace(/^\s*[-•*]\s*/, "").trim())
+      .map((item) =>
+        item
+          .replace(/^\s*[-•*]\s*/, "")
+          .trim(),
+      )
       .filter(Boolean);
   }
 
   if (typeof value === "string") {
     return value
       .split(/\r?\n/)
-      .map((item) => item.replace(/^\s*[-•*]\s*/, "").trim())
+      .map((item) =>
+        item
+          .replace(/^\s*[-•*]\s*/, "")
+          .trim(),
+      )
       .filter(Boolean);
   }
 
@@ -348,176 +168,50 @@ function bullets(value: unknown): string[] {
 }
 
 /* ================================================================
-   NORMALIZE EXPERIENCE
+   SECTION CONTENT HELPERS
 ================================================================ */
 
-function normalizeExperience(experienceValue: unknown): ResumeExperience[] {
-  return asArray(experienceValue)
-    .filter((item) => item && typeof item === "object")
-    .map((item: any) => {
-      return {
-        company: text(item.company),
-
-        position: text(item.position),
-
-        location: text(item.location),
-
-        startDate: text(item.startDate),
-
-        endDate: text(item.endDate),
-
-        currentlyWorking: item.currentlyWorking === true,
-
-        description: bullets(item.description),
-      };
-    });
+function sectionObject(
+  content: unknown,
+): Record<string, unknown> {
+  return objectValue(content) ?? {};
 }
 
-/* ================================================================
-   NORMALIZE EDUCATION
-================================================================ */
+function sectionString(
+  content: unknown,
+  key: string,
+): string {
+  const object = objectValue(content);
 
-function normalizeEducation(educationValue: unknown): ResumeEducation[] {
-  return asArray(educationValue)
-    .filter((item) => item && typeof item === "object")
-    .map((item: any) => {
-      return {
-        institution: text(item.institution),
-
-        degree: text(item.degree),
-
-        fieldOfStudy: text(item.fieldOfStudy),
-
-        startDate: text(item.startDate),
-
-        endDate: text(item.endDate),
-
-        grade: text(item.grade),
-
-        location: text(item.location),
-      };
-    });
-}
-
-/* ================================================================
-   NORMALIZE SKILLS
-================================================================ */
-
-/* ================================================================
-   NORMALIZE SKILLS
-================================================================ */
-
-function normalizeSkills(skillsValue: unknown): Record<string, string[]> {
-  if (
-    !skillsValue ||
-    typeof skillsValue !== "object" ||
-    Array.isArray(skillsValue)
-  ) {
-    return {};
+  if (!object) {
+    return "";
   }
 
-  const skillsObject = skillsValue as Record<string, unknown>;
-
-  /*
-   * ------------------------------------------------------------
-   * GET ACTUAL SKILL CATEGORIES
-   * ------------------------------------------------------------
-   *
-   * __order is metadata.
-   *
-   * It must NEVER be treated as an actual
-   * skill category.
-   */
-
-  const categories = Object.keys(skillsObject).filter(
-    (category) => category !== "__order",
-  );
-
-  /*
-   * ------------------------------------------------------------
-   * READ EXPLICIT CATEGORY ORDER
-   * ------------------------------------------------------------
-   */
-
-  const storedOrder = Array.isArray(skillsObject.__order)
-    ? skillsObject.__order.filter(
-        (category): category is string =>
-          typeof category === "string" &&
-          category.trim().length > 0 &&
-          category !== "__order",
-      )
-    : [];
-
-  /*
-   * ------------------------------------------------------------
-   * BUILD FINAL CATEGORY ORDER
-   * ------------------------------------------------------------
-   *
-   * Example:
-   *
-   * __order:
-   *
-   * [
-   *   "Programming Languages",
-   *   "Frontend",
-   *   "Backend",
-   *   "Database"
-   * ]
-   *
-   * PDF will follow exactly that order.
-   *
-   *
-   * The second part is important for backwards
-   * compatibility.
-   *
-   * If an old resume has categories but no
-   * __order, those categories still appear.
-   */
-
-  const orderedCategories = [
-    ...storedOrder.filter((category) => categories.includes(category)),
-
-    ...categories.filter((category) => !storedOrder.includes(category)),
-  ];
-
-  /*
-   * ------------------------------------------------------------
-   * BUILD CLEAN PDF SKILLS
-   * ------------------------------------------------------------
-   *
-   * IMPORTANT:
-   *
-   * __order is NOT copied into result.
-   */
-
-  const result: Record<string, string[]> = {};
-
-  for (const category of orderedCategories) {
-    const items = stringArray(skillsObject[category]);
-
-    if (items.length > 0) {
-      result[category] = items;
-    }
-  }
-
-  return result;
+  return text(object[key]);
 }
 
-/* ================================================================
-   SKILL TITLE
-================================================================ */
+function sectionArray(content: unknown): unknown[] {
+  if (Array.isArray(content)) {
+    return content;
+  }
 
-function skillTitle(value: string): string {
-  return value
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  const object = objectValue(content);
+
+  if (object && Array.isArray(object.items)) {
+    return object.items;
+  }
+
+  return [];
 }
 
 /* ================================================================
    PAGE SPACE
 ================================================================ */
 
-function ensureSpace(doc: PDFKit.PDFDocument, requiredHeight: number): void {
+function ensureSpace(
+  doc: PDFKit.PDFDocument,
+  requiredHeight: number,
+): void {
   const bottom = PAGE_HEIGHT - MARGIN;
 
   if (doc.y + requiredHeight > bottom) {
@@ -526,17 +220,13 @@ function ensureSpace(doc: PDFKit.PDFDocument, requiredHeight: number): void {
 
       margins: {
         top: MARGIN,
-
         bottom: MARGIN,
-
         left: MARGIN,
-
         right: MARGIN,
       },
     });
 
     doc.x = MARGIN;
-
     doc.y = MARGIN;
   }
 }
@@ -545,42 +235,16 @@ function ensureSpace(doc: PDFKit.PDFDocument, requiredHeight: number): void {
    SECTION TITLE
 ================================================================ */
 
-/* ================================================================
-   SECTION TITLE
-================================================================ */
-
-function drawSectionTitle(doc: PDFKit.PDFDocument, title: string): void {
-  /*
-   * Extra vertical breathing room before every section.
-   *
-   * The reference layout is compact, but sections should
-   * still have a clear visual separation.
-   */
-
+function drawSectionTitle(
+  doc: PDFKit.PDFDocument,
+  title: string,
+): void {
   const SECTION_TOP_SPACE = 7;
-  const TITLE_TO_LINE_SPACE = 3;
   const LINE_TO_CONTENT_SPACE = 8;
-
-  /*
-   * Make sure the section heading itself does not
-   * get stranded at the bottom of a page.
-   */
 
   ensureSpace(doc, 32);
 
-  /*
-   * ------------------------------------------------------------
-   * SPACE BEFORE SECTION
-   * ------------------------------------------------------------
-   */
-
   doc.y += SECTION_TOP_SPACE;
-
-  /*
-   * ------------------------------------------------------------
-   * SECTION TITLE
-   * ------------------------------------------------------------
-   */
 
   const titleY = doc.y;
 
@@ -588,17 +252,15 @@ function drawSectionTitle(doc: PDFKit.PDFDocument, title: string): void {
     .font(FONT_BOLD)
     .fontSize(10)
     .fillColor(BLACK)
-    .text(title.toUpperCase(), MARGIN, titleY, {
-      width: CONTENT_WIDTH,
-
-      lineBreak: false,
-    });
-
-  /*
-   * ------------------------------------------------------------
-   * SECTION DIVIDER
-   * ------------------------------------------------------------
-   */
+    .text(
+      text(title).toUpperCase(),
+      MARGIN,
+      titleY,
+      {
+        width: CONTENT_WIDTH,
+        lineBreak: false,
+      },
+    );
 
   const lineY = titleY + 14;
 
@@ -609,12 +271,6 @@ function drawSectionTitle(doc: PDFKit.PDFDocument, title: string): void {
     .strokeColor(LINE)
     .stroke();
 
-  /*
-   * ------------------------------------------------------------
-   * SPACE AFTER DIVIDER
-   * ------------------------------------------------------------
-   */
-
   doc.y = lineY + LINE_TO_CONTENT_SPACE;
 }
 
@@ -622,34 +278,26 @@ function drawSectionTitle(doc: PDFKit.PDFDocument, title: string): void {
    HEADER
 ================================================================ */
 
-function drawHeader(doc: PDFKit.PDFDocument, resume: ResumePdfData): void {
+function drawHeader(
+  doc: PDFKit.PDFDocument,
+  resume: ResumePdfData,
+): void {
   const fullName = text(resume.fullName) || "Resume";
-
-  /*
-   * ------------------------------------------------------------
-   * NAME
-   * ------------------------------------------------------------
-   */
 
   doc
     .font(FONT_BOLD)
     .fontSize(19)
     .fillColor(BLACK)
-    .text(fullName, MARGIN, doc.y, {
-      width: CONTENT_WIDTH,
-
-      align: "center",
-
-      lineBreak: false,
-    });
-
-  /*
-   * ------------------------------------------------------------
-   * HEADLINE
-   * ------------------------------------------------------------
-   *
-   * Keep this small and close to the name.
-   */
+    .text(
+      fullName,
+      MARGIN,
+      doc.y,
+      {
+        width: CONTENT_WIDTH,
+        align: "center",
+        lineBreak: false,
+      },
+    );
 
   const headline = text(resume.headline);
 
@@ -660,55 +308,45 @@ function drawHeader(doc: PDFKit.PDFDocument, resume: ResumePdfData): void {
       .font(FONT_REGULAR)
       .fontSize(9)
       .fillColor(TEXT)
-      .text(headline, MARGIN, doc.y, {
-        width: CONTENT_WIDTH,
-
-        align: "center",
-
-        lineBreak: false,
-      });
+      .text(
+        headline,
+        MARGIN,
+        doc.y,
+        {
+          width: CONTENT_WIDTH,
+          align: "center",
+          lineBreak: false,
+        },
+      );
   }
-
-  /*
-   * ------------------------------------------------------------
-   * CONTACT
-   * ------------------------------------------------------------
-   */
 
   const contact = [
     text(resume.location),
-
     text(resume.phone),
-
     text(resume.email),
-
     text(resume.linkedin),
-
     text(resume.github),
-
     text(resume.website),
   ].filter(Boolean);
 
-  if (contact.length) {
+  if (contact.length > 0) {
     doc.moveDown(0.1);
 
     doc
       .font(FONT_REGULAR)
       .fontSize(8.5)
       .fillColor(TEXT)
-      .text(contact.join("  |  "), MARGIN, doc.y, {
-        width: CONTENT_WIDTH,
-
-        align: "center",
-
-        lineBreak: false,
-      });
+      .text(
+        contact.join("  |  "),
+        MARGIN,
+        doc.y,
+        {
+          width: CONTENT_WIDTH,
+          align: "center",
+          lineBreak: false,
+        },
+      );
   }
-
-  /*
-   * Larger breathing room after
-   * the header before the first section.
-   */
 
   doc.moveDown(0.48);
 }
@@ -717,56 +355,49 @@ function drawHeader(doc: PDFKit.PDFDocument, resume: ResumePdfData): void {
    BULLET
 ================================================================ */
 
-function drawBullet(doc: PDFKit.PDFDocument, value: string): void {
+function drawBullet(
+  doc: PDFKit.PDFDocument,
+  value: string,
+): void {
   if (!value) {
     return;
   }
 
-  /*
-   * Hanging bullet layout.
-   */
-
   const bulletWidth = 11;
-
   const textX = MARGIN + bulletWidth;
 
   ensureSpace(doc, 15);
 
   const startY = doc.y;
 
-  /*
-   * Bullet
-   */
+  doc
+    .font(FONT_REGULAR)
+    .fontSize(8.7)
+    .fillColor(TEXT)
+    .text(
+      "•",
+      MARGIN + 2,
+      startY,
+      {
+        width: 6,
+        lineBreak: false,
+      },
+    );
 
   doc
     .font(FONT_REGULAR)
     .fontSize(8.7)
     .fillColor(TEXT)
-    .text("•", MARGIN + 2, startY, {
-      width: 6,
-
-      lineBreak: false,
-    });
-
-  /*
-   * Bullet text
-   */
-
-  doc
-    .font(FONT_REGULAR)
-    .fontSize(8.7)
-    .fillColor(TEXT)
-    .text(value, textX, startY, {
-      width: CONTENT_WIDTH - bulletWidth,
-
-      lineGap: 1.2,
-
-      paragraphGap: 0,
-    });
-
-  /*
-   * Very small gap between bullets.
-   */
+    .text(
+      value,
+      textX,
+      startY,
+      {
+        width: CONTENT_WIDTH - bulletWidth,
+        lineGap: 1.2,
+        paragraphGap: 0,
+      },
+    );
 
   doc.moveDown(0.035);
 }
@@ -775,28 +406,55 @@ function drawBullet(doc: PDFKit.PDFDocument, value: string): void {
    SUMMARY
 ================================================================ */
 
-function drawSummary(doc: PDFKit.PDFDocument, summary: string): void {
+function drawSummary(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  let summary = "";
+
+  if (typeof section.content === "string") {
+    summary = text(section.content);
+  } else {
+    summary = sectionString(
+      section.content,
+      "text",
+    );
+
+    if (!summary) {
+      summary = sectionString(
+        section.content,
+        "summary",
+      );
+    }
+
+    if (!summary) {
+      summary = sectionString(
+        section.content,
+        "description",
+      );
+    }
+  }
+
   if (!summary) {
     return;
   }
 
-  drawSectionTitle(doc, "Professional Summary");
+  drawSectionTitle(doc, section.title);
 
   doc
     .font(FONT_REGULAR)
     .fontSize(8.7)
     .fillColor(TEXT)
-    .text(summary, MARGIN, doc.y, {
-      width: CONTENT_WIDTH,
-
-      lineGap: 1.15,
-
-      align: "left",
-    });
-
-  /*
-   * Space before next section.
-   */
+    .text(
+      summary,
+      MARGIN,
+      doc.y,
+      {
+        width: CONTENT_WIDTH,
+        lineGap: 1.15,
+        align: "left",
+      },
+    );
 
   doc.moveDown(0.05);
 }
@@ -805,58 +463,112 @@ function drawSummary(doc: PDFKit.PDFDocument, summary: string): void {
    SKILLS
 ================================================================ */
 
+interface ResumeSkillCategory {
+  id?: string;
+  name?: string;
+  items?: unknown;
+}
+
+function normalizeSkillCategories(
+  content: unknown,
+): ResumeSkillCategory[] {
+  /*
+   * New structure:
+   *
+   * {
+   *   categories: [
+   *     {
+   *       id,
+   *       name,
+   *       items: []
+   *     }
+   *   ]
+   * }
+   *
+   * Array order is the source of truth.
+   */
+
+  const object = objectValue(content);
+
+  if (!object) {
+    return [];
+  }
+
+  const categories = asArray(object.categories);
+
+  return categories
+    .filter(
+      (category) =>
+        category &&
+        typeof category === "object" &&
+        !Array.isArray(category),
+    )
+    .map((category: any) => ({
+      id: text(category.id),
+      name: text(category.name),
+      items: stringArray(category.items),
+    }))
+    .filter(
+      (category) =>
+        !!category.name &&
+        Array.isArray(category.items) &&
+        category.items.length > 0,
+    );
+}
+
 function drawSkills(
   doc: PDFKit.PDFDocument,
-  skills: Record<string, string[]>,
+  section: ResumeSection,
 ): void {
-  const categories = Object.entries(skills);
+  const categories = normalizeSkillCategories(
+    section.content,
+  );
 
   if (categories.length === 0) {
     return;
   }
 
-  drawSectionTitle(doc, "Technical Skills");
+  drawSectionTitle(doc, section.title);
 
-  for (const [category, values] of categories) {
-    if (!Array.isArray(values) || values.length === 0) {
+  for (const category of categories) {
+    if (
+      !category.name ||
+      !Array.isArray(category.items) ||
+      category.items.length === 0
+    ) {
       continue;
     }
 
     ensureSpace(doc, 14);
 
-    const label = skillTitle(category);
-
     const startY = doc.y;
-
-    /*
-     * Category label
-     */
 
     doc
       .font(FONT_BOLD)
       .fontSize(8.7)
       .fillColor(BLACK)
-      .text(`${label}:`, MARGIN, startY, {
-        continued: true,
-
-        width: CONTENT_WIDTH,
-
-        lineBreak: false,
-      });
-
-    /*
-     * Category values
-     */
+      .text(
+        `${category.name}:`,
+        MARGIN,
+        startY,
+        {
+          continued: true,
+          width: CONTENT_WIDTH,
+          lineBreak: false,
+        },
+      );
 
     doc
       .font(FONT_REGULAR)
       .fontSize(8.7)
       .fillColor(TEXT)
-      .text(` ${values.join(", ")}`, {
-        width: CONTENT_WIDTH,
-
-        lineGap: 1.0,
-      });
+      .text(
+        ` ${category.items.join(", ")}`,
+        {
+          width: CONTENT_WIDTH,
+          lineGap: 1,
+        },
+      );
 
     doc.moveDown(0.015);
   }
@@ -868,28 +580,57 @@ function drawSkills(
    EXPERIENCE
 ================================================================ */
 
+interface ResumeExperience {
+  company?: string;
+  position?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  currentlyWorking?: boolean;
+  description?: unknown;
+}
+
+function normalizeExperience(
+  content: unknown,
+): ResumeExperience[] {
+  return sectionArray(content)
+    .filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item),
+    )
+    .map((item: any) => ({
+      company: text(item.company),
+      position: text(item.position),
+      location: text(item.location),
+      startDate: text(item.startDate),
+      endDate: text(item.endDate),
+      currentlyWorking:
+        item.currentlyWorking === true,
+      description: bullets(item.description),
+    }));
+}
+
 function drawExperience(
   doc: PDFKit.PDFDocument,
-  experience: ResumeExperience[],
+  section: ResumeSection,
 ): void {
+  const experience = normalizeExperience(
+    section.content,
+  );
+
   if (experience.length === 0) {
     return;
   }
 
-  drawSectionTitle(doc, "Professional Experience");
+  drawSectionTitle(doc, section.title);
 
   for (const item of experience) {
-    /*
-     * Keep enough room for the
-     * beginning of an entry.
-     */
-
     ensureSpace(doc, 45);
 
     const position = text(item.position);
-
     const company = text(item.company);
-
     const location = text(item.location);
 
     let endDate = text(item.endDate);
@@ -898,99 +639,81 @@ function drawExperience(
       endDate = "Present";
     }
 
-    const date = [text(item.startDate), endDate].filter(Boolean).join(" – ");
+    const date = [
+      text(item.startDate),
+      endDate,
+    ]
+      .filter(Boolean)
+      .join(" – ");
 
-    /*
-     * --------------------------------------------------------
-     * TOP ROW
-     * --------------------------------------------------------
-     *
-     * Left:
-     *   Position — Company
-     *
-     * Right:
-     *   Location
-     */
-
-    const heading = [position, company].filter(Boolean).join(" — ");
+    const heading = [
+      position,
+      company,
+    ]
+      .filter(Boolean)
+      .join(" — ");
 
     const headingY = doc.y;
-
-    /*
-     * Left side
-     */
 
     if (heading) {
       doc
         .font(FONT_BOLD)
         .fontSize(8.9)
         .fillColor(BLACK)
-        .text(heading, MARGIN, headingY, {
-          width: CONTENT_WIDTH - 135,
-
-          lineBreak: false,
-        });
+        .text(
+          heading,
+          MARGIN,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 135,
+            lineBreak: false,
+          },
+        );
     }
-
-    /*
-     * Right side location
-     */
 
     if (location) {
       doc
         .font(FONT_REGULAR)
         .fontSize(8.4)
         .fillColor(TEXT)
-        .text(location, MARGIN + 135, headingY, {
-          width: CONTENT_WIDTH - 135,
-
-          align: "right",
-
-          lineBreak: false,
-        });
+        .text(
+          location,
+          MARGIN + 135,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 135,
+            align: "right",
+            lineBreak: false,
+          },
+        );
     }
-
-    /*
-     * --------------------------------------------------------
-     * DATE ROW
-     * --------------------------------------------------------
-     */
 
     if (date) {
       doc
         .font(FONT_ITALIC)
         .fontSize(8.1)
         .fillColor(MUTED)
-        .text(date, MARGIN, headingY + 13, {
-          width: CONTENT_WIDTH,
-
-          align: "right",
-
-          lineBreak: false,
-        });
+        .text(
+          date,
+          MARGIN,
+          headingY + 13,
+          {
+            width: CONTENT_WIDTH,
+            align: "right",
+            lineBreak: false,
+          },
+        );
     }
-
-    /*
-     * Move below the heading/date area.
-     */
 
     doc.y = headingY + 25;
 
-    /*
-     * --------------------------------------------------------
-     * DESCRIPTION
-     * --------------------------------------------------------
-     */
-
-    const description = bullets(item.description);
+    const description = bullets(
+      item.description,
+    );
 
     for (const bullet of description) {
       drawBullet(doc, bullet);
     }
-
-    /*
-     * Space between experience entries.
-     */
 
     doc.moveDown(0.13);
   }
@@ -1000,102 +723,1100 @@ function drawExperience(
    EDUCATION
 ================================================================ */
 
+interface ResumeEducation {
+  institution?: string;
+  degree?: string;
+  fieldOfStudy?: string;
+  startDate?: string;
+  endDate?: string;
+  grade?: string;
+  location?: string;
+}
+
+function normalizeEducation(
+  content: unknown,
+): ResumeEducation[] {
+  return sectionArray(content)
+    .filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item),
+    )
+    .map((item: any) => ({
+      institution: text(item.institution),
+      degree: text(item.degree),
+      fieldOfStudy: text(item.fieldOfStudy),
+      startDate: text(item.startDate),
+      endDate: text(item.endDate),
+      grade: text(item.grade),
+      location: text(item.location),
+    }));
+}
+
 function drawEducation(
   doc: PDFKit.PDFDocument,
-  education: ResumeEducation[],
+  section: ResumeSection,
 ): void {
+  const education = normalizeEducation(
+    section.content,
+  );
+
   if (education.length === 0) {
     return;
   }
 
-  drawSectionTitle(doc, "Education");
+  drawSectionTitle(doc, section.title);
 
   for (const item of education) {
     ensureSpace(doc, 22);
 
     const degree = text(item.degree);
-
     const field = text(item.fieldOfStudy);
-
     const institution = text(item.institution);
 
-    /*
-     * Build:
-     *
-     * Master of Business Administration (Finance)
-     * — Sri Indu P.G. College
-     */
-
-    const qualification = [degree, field ? `(${field})` : ""]
+    const qualification = [
+      degree,
+      field ? `(${field})` : "",
+    ]
       .filter(Boolean)
       .join(" ");
 
-    const heading = [qualification, institution ? `— ${institution}` : ""]
+    const heading = [
+      qualification,
+      institution
+        ? `— ${institution}`
+        : "",
+    ]
       .filter(Boolean)
       .join(" ");
 
     const headingY = doc.y;
-
-    /*
-     * Left side
-     */
 
     if (heading) {
       doc
         .font(FONT_BOLD)
         .fontSize(8.8)
         .fillColor(BLACK)
-        .text(heading, MARGIN, headingY, {
-          width: CONTENT_WIDTH - 145,
-
-          lineBreak: false,
-        });
+        .text(
+          heading,
+          MARGIN,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 145,
+            lineBreak: false,
+          },
+        );
     }
 
-    /*
-     * Right side
-     */
+    const startDate = text(
+      item.startDate,
+    );
 
-    const startDate = text(item.startDate);
+    const endDate = text(
+      item.endDate,
+    );
 
-    const endDate = text(item.endDate);
-
-    /*
-     * For education, if only one
-     * date/year exists, use it.
-     */
-
-    const date = [startDate, endDate].filter(Boolean).join(" – ");
+    const date = [
+      startDate,
+      endDate,
+    ]
+      .filter(Boolean)
+      .join(" – ");
 
     const grade = text(item.grade);
 
     const formattedGrade = grade
-      ? `CGPA: ${grade.replace(/^CGPA:\s*/i, "")}`
+      ? `CGPA: ${grade.replace(
+        /^CGPA:\s*/i,
+        "",
+      )}`
       : "";
 
-    const right = [date, formattedGrade].filter(Boolean).join(" | ");
+    const right = [
+      date,
+      formattedGrade,
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
     if (right) {
       doc
         .font(FONT_REGULAR)
         .fontSize(8.2)
         .fillColor(TEXT)
-        .text(right, MARGIN + 145, headingY, {
-          width: CONTENT_WIDTH - 145,
-
-          align: "right",
-
-          lineBreak: false,
-        });
+        .text(
+          right,
+          MARGIN + 145,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 145,
+            align: "right",
+            lineBreak: false,
+          },
+        );
     }
-
-    /*
-     * Move to next education item.
-     */
 
     doc.y = headingY + 13;
 
     doc.moveDown(0.02);
+  }
+}
+
+/* ================================================================
+   PROJECTS
+================================================================ */
+
+interface ResumeProject {
+  id?: string;
+  name?: string;
+  description?: unknown;
+  technologies?: unknown;
+  url?: string;
+  github?: string;
+}
+
+function normalizeProjects(
+  content: unknown,
+): ResumeProject[] {
+  return sectionArray(content)
+    .filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item),
+    )
+    .map((item: any) => ({
+      id: text(item.id),
+      name: text(item.name),
+      description: item.description,
+      technologies: item.technologies,
+      url: text(item.url),
+      github: text(item.github),
+    }))
+    .filter(
+      (item) => !!item.name,
+    );
+}
+
+function drawProjects(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  const projects = normalizeProjects(
+    section.content,
+  );
+
+  if (projects.length === 0) {
+    return;
+  }
+
+  drawSectionTitle(doc, section.title);
+
+  for (const project of projects) {
+    ensureSpace(doc, 45);
+
+    const name = text(project.name);
+
+    const projectUrl =
+      text(project.github) ||
+      text(project.url);
+
+    const headingY = doc.y;
+
+    if (name) {
+      doc
+        .font(FONT_BOLD)
+        .fontSize(8.9)
+        .fillColor(BLACK)
+        .text(
+          name,
+          MARGIN,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 180,
+            lineBreak: false,
+          },
+        );
+    }
+
+    if (projectUrl) {
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8.1)
+        .fillColor(MUTED)
+        .text(
+          projectUrl,
+          MARGIN + 180,
+          headingY,
+          {
+            width: CONTENT_WIDTH - 180,
+            align: "right",
+            lineBreak: false,
+          },
+        );
+    }
+
+    doc.y = headingY + 12;
+
+    const technologies = stringArray(
+      project.technologies,
+    );
+
+    if (technologies.length > 0) {
+      const technologyY = doc.y;
+
+      doc
+        .font(FONT_BOLD)
+        .fontSize(8.5)
+        .fillColor(BLACK)
+        .text(
+          "Technologies:",
+          MARGIN,
+          technologyY,
+          {
+            continued: true,
+            width: CONTENT_WIDTH,
+            lineBreak: false,
+          },
+        );
+
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8.5)
+        .fillColor(TEXT)
+        .text(
+          ` ${technologies.join(", ")}`,
+          {
+            width: CONTENT_WIDTH,
+            lineGap: 1,
+          },
+        );
+
+      doc.moveDown(0.05);
+    }
+
+    const description = bullets(
+      project.description,
+    );
+
+    for (const bullet of description) {
+      drawBullet(doc, bullet);
+    }
+
+    doc.moveDown(0.5);
+  }
+}
+
+/* ================================================================
+   GENERIC LIST SECTION
+================================================================ */
+
+interface GenericListItem {
+  id?: string;
+  title?: string;
+  name?: string;
+  description?: unknown;
+  date?: string;
+  issuer?: string;
+  organization?: string;
+  institution?: string;
+  url?: string;
+  [key: string]: unknown;
+}
+
+function normalizeGenericItems(
+  content: unknown,
+): GenericListItem[] {
+  return sectionArray(content)
+    .filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item),
+    )
+    .map(
+      (item: any) => ({
+        ...item,
+        id: text(item.id),
+        title: text(item.title),
+        name: text(item.name),
+        description: item.description,
+        date: text(item.date),
+        issuer: text(item.issuer),
+        organization: text(item.organization),
+        institution: text(item.institution),
+        url: text(item.url),
+      }),
+    );
+}
+
+/* ================================================================
+   ACHIEVEMENTS
+================================================================ */
+
+function drawAchievements(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  drawGenericListSection(
+    doc,
+    section,
+    {
+      titleKeys: ["title", "name"],
+      metadataKeys: [
+        "date",
+        "organization",
+      ],
+      descriptionAsBullet: true,
+    },
+  );
+}
+
+/* ================================================================
+   CERTIFICATIONS
+================================================================ */
+
+function drawCertifications(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  drawGenericListSection(
+    doc,
+    section,
+    {
+      titleKeys: ["name", "title"],
+      metadataKeys: [
+        "issuer",
+        "date",
+      ],
+      descriptionAsBullet: false,
+    },
+  );
+}
+
+/* ================================================================
+   AWARDS
+================================================================ */
+
+function drawAwards(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  drawGenericListSection(
+    doc,
+    section,
+    {
+      titleKeys: ["title", "name"],
+      metadataKeys: [
+        "organization",
+        "date",
+      ],
+      descriptionAsBullet: true,
+    },
+  );
+}
+
+/* ================================================================
+   LANGUAGES
+================================================================ */
+
+function drawLanguages(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  const items = normalizeGenericItems(
+    section.content,
+  );
+
+  if (items.length === 0) {
+    return;
+  }
+
+  drawSectionTitle(
+    doc,
+    section.title,
+  );
+
+  for (const item of items) {
+    const object = objectValue(item);
+
+    if (!object) {
+      continue;
+    }
+
+    const language =
+      text(object.language) ||
+      text(object.name) ||
+      text(object.title);
+
+    const proficiency =
+      text(object.proficiency) ||
+      text(object.level);
+
+    if (!language) {
+      continue;
+    }
+
+    ensureSpace(doc, 16);
+
+    const startY = doc.y;
+
+    doc
+      .font(FONT_BOLD)
+      .fontSize(8.7)
+      .fillColor(BLACK)
+      .text(
+        `${language}:`,
+        MARGIN,
+        startY,
+        {
+          continued: true,
+          width: CONTENT_WIDTH,
+          lineBreak: false,
+        },
+      );
+
+    if (proficiency) {
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8.7)
+        .fillColor(TEXT)
+        .text(
+          ` ${proficiency}`,
+          {
+            width: CONTENT_WIDTH,
+            lineGap: 1,
+          },
+        );
+    } else {
+      doc.text("", {
+        width: CONTENT_WIDTH,
+      });
+    }
+
+    doc.moveDown(0.015);
+  }
+
+  doc.moveDown(0.05);
+}
+
+/* ================================================================
+   PUBLICATIONS
+================================================================ */
+
+function drawPublications(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  drawGenericListSection(
+    doc,
+    section,
+    {
+      titleKeys: [
+        "title",
+        "name",
+      ],
+      metadataKeys: [
+        "publisher",
+        "date",
+      ],
+      descriptionAsBullet: false,
+    },
+  );
+}
+
+/* ================================================================
+   VOLUNTEER
+================================================================ */
+
+function drawVolunteer(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  drawGenericListSection(
+    doc,
+    section,
+    {
+      titleKeys: [
+        "role",
+        "position",
+        "title",
+        "name",
+      ],
+      metadataKeys: [
+        "organization",
+        "location",
+        "date",
+      ],
+      descriptionAsBullet: true,
+    },
+  );
+}
+
+/* ================================================================
+   GENERIC LIST RENDERER
+================================================================ */
+
+interface GenericListOptions {
+  titleKeys: string[];
+  metadataKeys: string[];
+  descriptionAsBullet: boolean;
+}
+
+function firstText(
+  object: Record<string, unknown>,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = text(object[key]);
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function drawGenericListSection(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+  options: GenericListOptions,
+): void {
+  const items = normalizeGenericItems(
+    section.content,
+  );
+
+  if (items.length === 0) {
+    return;
+  }
+
+  drawSectionTitle(
+    doc,
+    section.title,
+  );
+
+  for (const item of items) {
+    const object = objectValue(item);
+
+    if (!object) {
+      continue;
+    }
+
+    const title = firstText(
+      object,
+      options.titleKeys,
+    );
+
+    const metadataParts = options.metadataKeys
+      .map((key) => text(object[key]))
+      .filter(Boolean);
+
+    const description = bullets(
+      object.description,
+    );
+
+    if (
+      !title &&
+      metadataParts.length === 0 &&
+      description.length === 0
+    ) {
+      continue;
+    }
+
+    ensureSpace(doc, 25);
+
+    const headingY = doc.y;
+
+    if (title) {
+      doc
+        .font(FONT_BOLD)
+        .fontSize(8.8)
+        .fillColor(BLACK)
+        .text(
+          title,
+          MARGIN,
+          headingY,
+          {
+            width:
+              metadataParts.length > 0
+                ? CONTENT_WIDTH - 145
+                : CONTENT_WIDTH,
+            lineBreak: false,
+          },
+        );
+    }
+
+    if (metadataParts.length > 0) {
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8.2)
+        .fillColor(TEXT)
+        .text(
+          metadataParts.join(" | "),
+          MARGIN + 145,
+          headingY,
+          {
+            width:
+              CONTENT_WIDTH - 145,
+            align: "right",
+            lineBreak: false,
+          },
+        );
+    }
+
+    doc.y = headingY + 13;
+
+    if (options.descriptionAsBullet) {
+      for (const bullet of description) {
+        drawBullet(doc, bullet);
+      }
+    } else {
+      for (const bullet of description) {
+        ensureSpace(doc, 15);
+
+        doc
+          .font(FONT_REGULAR)
+          .fontSize(8.7)
+          .fillColor(TEXT)
+          .text(
+            bullet,
+            MARGIN,
+            doc.y,
+            {
+              width: CONTENT_WIDTH,
+              lineGap: 1.1,
+            },
+          );
+
+        doc.moveDown(0.035);
+      }
+    }
+
+    doc.moveDown(0.13);
+  }
+}
+
+/* ================================================================
+   CUSTOM SECTION
+================================================================ */
+
+/* ================================================================
+   CUSTOM SECTION
+================================================================ */
+
+function drawCustomSection(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  const content = section.content;
+
+  /* ------------------------------------------------------------
+     CUSTOM STRING
+  ------------------------------------------------------------ */
+
+  if (typeof content === "string") {
+    const value = text(content);
+
+    if (!value) {
+      return;
+    }
+
+    drawSectionTitle(
+      doc,
+      section.title,
+    );
+
+    doc
+      .font(FONT_REGULAR)
+      .fontSize(8.7)
+      .fillColor(TEXT)
+      .text(
+        value,
+        MARGIN,
+        doc.y,
+        {
+          width: CONTENT_WIDTH,
+          lineGap: 1.15,
+        },
+      );
+
+    doc.moveDown(0.05);
+
+    return;
+  }
+
+  /* ------------------------------------------------------------
+     NORMALIZE CUSTOM ITEMS
+     
+     Supports both:
+     
+     {
+       items: [...]
+     }
+     
+     and legacy:
+     
+     [...]
+  ------------------------------------------------------------ */
+
+  let rawItems: unknown[] = [];
+
+  if (Array.isArray(content)) {
+    rawItems = content;
+  } else {
+    const object = objectValue(content);
+
+    if (object && Array.isArray(object.items)) {
+      rawItems = object.items;
+    }
+  }
+
+  const items = normalizeGenericItems(
+    rawItems,
+  );
+
+  /* ------------------------------------------------------------
+     NO ITEMS
+  ------------------------------------------------------------ */
+
+  if (items.length === 0) {
+    return;
+  }
+
+  /* ------------------------------------------------------------
+     SECTION TITLE
+  ------------------------------------------------------------ */
+
+  drawSectionTitle(
+    doc,
+    section.title,
+  );
+
+  /* ------------------------------------------------------------
+     RENDER ITEMS
+  ------------------------------------------------------------ */
+
+  for (const item of items) {
+    const object = objectValue(item);
+
+    if (!object) {
+      continue;
+    }
+
+    const title =
+      firstText(
+        object,
+        [
+          "title",
+          "name",
+        ],
+      );
+
+    const subtitle =
+      text(object.subtitle);
+
+    const date =
+      text(object.date);
+
+    const location =
+      text(object.location);
+
+    const url =
+      text(object.url);
+
+    /*
+     * Description can be either:
+     *
+     * string
+     * string[]
+     */
+    const description =
+      bullets(
+        object.description,
+      );
+
+    /*
+     * Some custom entries may explicitly
+     * contain bullets[].
+     */
+    const explicitBullets =
+      bullets(
+        object.bullets,
+      );
+
+    const allBullets = [
+      ...description,
+      ...explicitBullets,
+    ];
+
+    /*
+     * Don't render completely empty entries.
+     */
+    if (
+      !title &&
+      !subtitle &&
+      !date &&
+      !location &&
+      !url &&
+      allBullets.length === 0
+    ) {
+      continue;
+    }
+
+    ensureSpace(
+      doc,
+      28,
+    );
+
+    const startY = doc.y;
+
+    /* ----------------------------------------------------------
+    TITLE
+ ---------------------------------------------------------- */
+
+    if (title) {
+      doc
+        .font(FONT_BOLD)
+        .fontSize(8.9)
+        .fillColor(BLACK)
+        .text(
+          title,
+          MARGIN,
+          startY,
+          {
+            width: CONTENT_WIDTH,
+            lineBreak: false,
+          },
+        );
+    }
+
+    /* ----------------------------------------------------------
+       SUBTITLE
+    ---------------------------------------------------------- */
+
+    if (subtitle) {
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8.5)
+        .fillColor(TEXT)
+        .text(
+          subtitle,
+          MARGIN,
+          startY + 13,
+          {
+            width: CONTENT_WIDTH,
+            lineBreak: false,
+          },
+        );
+    }
+
+    /*
+     * Move below title + subtitle.
+     */
+    doc.y =
+      startY +
+      (title && subtitle
+        ? 26
+        : title || subtitle
+          ? 13
+          : 0);
+
+    /* ----------------------------------------------------------
+       DATE / LOCATION
+    ---------------------------------------------------------- */
+
+    const metadata = [
+      date,
+      location,
+    ].filter(Boolean);
+
+    if (metadata.length > 0) {
+      const metadataY = doc.y;
+
+      doc
+        .font(FONT_ITALIC)
+        .fontSize(8.1)
+        .fillColor(MUTED)
+        .text(
+          metadata.join(" | "),
+          MARGIN,
+          metadataY,
+          {
+            width: CONTENT_WIDTH,
+            align: "right",
+            lineBreak: false,
+          },
+        );
+
+      doc.y =
+        metadataY + 12;
+    }
+
+    /* ----------------------------------------------------------
+       URL
+    ---------------------------------------------------------- */
+
+    if (url) {
+      ensureSpace(
+        doc,
+        14,
+      );
+
+      doc
+        .font(FONT_REGULAR)
+        .fontSize(8)
+        .fillColor(MUTED)
+        .text(
+          url,
+          MARGIN,
+          doc.y,
+          {
+            width: CONTENT_WIDTH,
+            lineGap: 1,
+          },
+        );
+
+      doc.moveDown(0.03);
+    }
+
+    /* ----------------------------------------------------------
+       DESCRIPTION / BULLETS
+    ---------------------------------------------------------- */
+
+    for (const bullet of allBullets) {
+      drawBullet(
+        doc,
+        bullet,
+      );
+    }
+
+    doc.moveDown(0.13);
+  }
+}
+
+/* ================================================================
+   SECTION NORMALIZATION
+================================================================ */
+
+function normalizeSections(
+  sectionsValue: unknown,
+): ResumeSection[] {
+  if (!Array.isArray(sectionsValue)) {
+    return [];
+  }
+
+  return sectionsValue
+    .filter(
+      (section) =>
+        section &&
+        typeof section === "object" &&
+        !Array.isArray(section),
+    )
+    .map((section: any) => {
+      const type = text(
+        section.type,
+      ).toUpperCase();
+
+      return {
+        id: text(section.id),
+        type:
+          type as ResumeSectionType,
+        title:
+          text(section.title) ||
+          type ||
+          "Section",
+        visible:
+          section.visible !== false,
+        content:
+          section.content ?? [],
+      };
+    })
+    .filter(
+      (section) =>
+        !!section.id &&
+        !!section.type,
+    );
+}
+
+/* ================================================================
+   RENDER SECTION
+================================================================ */
+
+function renderSection(
+  doc: PDFKit.PDFDocument,
+  section: ResumeSection,
+): void {
+  /*
+   * Hidden sections remain in the
+   * stored resume data but are not
+   * rendered.
+   */
+
+  if (!section.visible) {
+    return;
+  }
+
+  switch (section.type) {
+    case "SUMMARY":
+      drawSummary(doc, section);
+      break;
+
+    case "EXPERIENCE":
+      drawExperience(doc, section);
+      break;
+
+    case "EDUCATION":
+      drawEducation(doc, section);
+      break;
+
+    case "SKILLS":
+      drawSkills(doc, section);
+      break;
+
+    case "PROJECTS":
+      drawProjects(doc, section);
+      break;
+
+    case "ACHIEVEMENTS":
+      drawAchievements(doc, section);
+      break;
+
+    case "CERTIFICATIONS":
+      drawCertifications(doc, section);
+      break;
+
+    case "AWARDS":
+      drawAwards(doc, section);
+      break;
+
+    case "LANGUAGES":
+      drawLanguages(doc, section);
+      break;
+
+    case "PUBLICATIONS":
+      drawPublications(doc, section);
+      break;
+
+    case "VOLUNTEER":
+      drawVolunteer(doc, section);
+      break;
+
+    case "CUSTOM":
+      drawCustomSection(doc, section);
+      break;
+
+    default:
+      /*
+       * Unknown section types are
+       * intentionally ignored.
+       *
+       * They remain safely stored in
+       * the database and can be supported
+       * by a future renderer.
+       */
+      break;
   }
 }
 
@@ -1108,132 +1829,106 @@ export function generateResumePdf(
   resume: ResumePdfData,
   filename = "resume.pdf",
 ): void {
-  /* ============================================================
-       CREATE PDF
-    ============================================================ */
-
   const doc = new PDFDocument({
     size: "A4",
 
     margins: {
       top: MARGIN,
-
       bottom: MARGIN,
-
       left: MARGIN,
-
       right: MARGIN,
     },
-
-    /*
-     * Buffer pages because we are
-     * intentionally not adding page
-     * numbers anymore.
-     */
 
     bufferPages: true,
 
     info: {
-      Title: `${text(resume.fullName) || "Resume"} - Resume`,
+      Title:
+        `${text(resume.fullName) || "Resume"} - Resume`,
 
-      Author: text(resume.fullName) || "Resume",
+      Author:
+        text(resume.fullName) || "Resume",
     },
   });
 
   /* ============================================================
-       REGISTER CALIBRI
-    ============================================================ */
+     REGISTER CALIBRI
+  ============================================================ */
 
-  doc.registerFont("Calibri", FONT_REGULAR);
+  doc.registerFont(
+    "Calibri",
+    FONT_REGULAR,
+  );
 
-  doc.registerFont("Calibri-Bold", FONT_BOLD);
+  doc.registerFont(
+    "Calibri-Bold",
+    FONT_BOLD,
+  );
 
-  doc.registerFont("Calibri-Italic", FONT_ITALIC);
+  doc.registerFont(
+    "Calibri-Italic",
+    FONT_ITALIC,
+  );
 
-  doc.registerFont("Calibri-BoldItalic", FONT_BOLD_ITALIC);
+  doc.registerFont(
+    "Calibri-BoldItalic",
+    FONT_BOLD_ITALIC,
+  );
 
   /* ============================================================
-       RESPONSE HEADERS
-    ============================================================ */
+     RESPONSE
+  ============================================================ */
 
-  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Type",
+    "application/pdf",
+  );
 
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${filename}"`,
+  );
 
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader(
+    "Cache-Control",
+    "no-store",
+  );
 
   /* ============================================================
-       PIPE PDF
-    ============================================================ */
+     PIPE
+  ============================================================ */
 
   doc.pipe(res);
 
   /* ============================================================
-       NORMALIZE DATA
-    ============================================================ */
-
-  const experience = normalizeExperience(resume.experience);
-
-  const education = normalizeEducation(resume.education);
-
-  const projects = normalizeProjects(resume.projects);
-
-  const skills = normalizeSkills(resume.skills);
-
-  const summary = text(resume.summary);
-
-  /*
-   * IMPORTANT:
-   *
-   * resume.projects is deliberately NOT normalized
-   * and NOT rendered.
-   *
-   * This removes:
-   *
-   * - Professional Projects
-   * - Personal Projects
-   *
-   * from the generated PDF.
-   *
-   * Training is also not rendered because
-   * it is not part of the PDF data/sections.
-   */
-
-  /* ============================================================
-       HEADER
-    ============================================================ */
+     HEADER
+  ============================================================ */
 
   drawHeader(doc, resume);
 
   /* ============================================================
-       PROFESSIONAL SUMMARY
-    ============================================================ */
+     DYNAMIC SECTIONS
+  ============================================================ */
 
-  drawSummary(doc, summary);
+  const sections = normalizeSections(
+    resume.sections,
+  );
 
-  /* ============================================================
-       TECHNICAL SKILLS
-    ============================================================ */
+  /*
+   * IMPORTANT:
+   *
+   * No sorting happens here.
+   *
+   * The database array order is the
+   * exact PDF rendering order.
+   */
 
-  drawSkills(doc, skills);
-
-  /* ============================================================
-       PROFESSIONAL EXPERIENCE
-    ============================================================ */
-
-  drawExperience(doc, experience);
-
-  drawProjects(doc, projects);
-
-  /* ============================================================
-       EDUCATION
-    ============================================================ */
-
-  drawEducation(doc, education);
+  for (const section of sections) {
+    renderSection(doc, section);
+  }
 
   /* ============================================================
-       FINISH
-    ============================================================ */
+     FINISH
+  ============================================================ */
 
   doc.end();
 }

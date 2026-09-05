@@ -1,16 +1,21 @@
-import { Router } from "express";
+import {
+    Router,
+} from "express";
 
 import * as ResumeController
     from "../controllers/resume.controller";
 
-import { authenticate }
-    from "../middleware/auth.middleware";
+import {
+    authenticate,
+} from "../middleware/auth.middleware";
 
-import { requirePermission }
-    from "../middleware/permission.middleware";
+import {
+    requirePermission,
+} from "../middleware/permission.middleware";
 
-import { validate }
-    from "../middleware/validate.middleware";
+import {
+    validate,
+} from "../middleware/validate.middleware";
 
 import {
     resumeProfileSchema,
@@ -22,7 +27,7 @@ const router = Router();
 
 
 router.use(
-    authenticate
+    authenticate,
 );
 
 
@@ -30,38 +35,29 @@ router.use(
    MASTER PROFILE
 ================================================================ */
 
-
-/*
- * View own master resume
- */
-
 router.get(
     "/profile",
 
     requirePermission(
-        "RESUME_VIEW"
+        "RESUME_VIEW",
     ),
 
-    ResumeController.getProfile
+    ResumeController.getProfile,
 );
 
-
-/*
- * Create / update own master resume
- */
 
 router.put(
     "/profile",
 
     requirePermission(
-        "RESUME_UPDATE"
+        "RESUME_UPDATE",
     ),
 
     validate(
-        resumeProfileSchema
+        resumeProfileSchema,
     ),
 
-    ResumeController.saveProfile
+    ResumeController.saveProfile,
 );
 
 
@@ -69,62 +65,56 @@ router.put(
    CUSTOMIZATION
 ================================================================ */
 
-
-/*
- * Get current customization
- */
-
 router.get(
     "/customization",
 
     requirePermission(
-        "RESUME_VIEW"
+        "RESUME_VIEW",
     ),
 
-    ResumeController.getCustomization
+    ResumeController.getCustomization,
 );
 
-
-/*
- * Populate customization from master profile
- */
 
 router.post(
     "/customization/from-profile",
 
     requirePermission(
-        "RESUME_UPDATE"
+        "RESUME_UPDATE",
     ),
 
-    ResumeController.createCustomizationFromProfile
+    ResumeController.createCustomizationFromProfile,
 );
 
-
-/*
- * Save customized resume
- */
 
 router.put(
     "/customization",
 
     requirePermission(
-        "RESUME_UPDATE"
+        "RESUME_UPDATE",
     ),
 
     validate(
-        resumeCustomizationSchema
+        resumeCustomizationSchema,
     ),
 
-    ResumeController.saveCustomization
+    ResumeController.saveCustomization,
 );
 
+
+/* ================================================================
+   PDF
+================================================================ */
 
 router.get(
     "/download",
-    requirePermission("RESUME_VIEW"),
-    ResumeController.downloadResumePdf
-);
 
+    requirePermission(
+        "RESUME_VIEW",
+    ),
+
+    ResumeController.downloadResumePdf,
+);
 
 
 export default router;

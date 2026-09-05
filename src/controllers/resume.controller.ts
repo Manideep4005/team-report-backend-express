@@ -9,7 +9,10 @@ import {
 
 import resumeService
     from "../services/resume.service";
-import { generateResumePdf } from "../utils/resumePdf";
+
+import {
+    generateResumePdf,
+} from "../utils/resumePdf";
 
 
 /* ================================================================
@@ -25,24 +28,21 @@ export const getProfile =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
             const profile =
                 await resumeService.getProfile(
-                    req.user.id
+                    req.user.id,
                 );
 
 
             res.json({
-
                 success: true,
 
                 data: profile,
-
             });
-
-        }
+        },
     );
 
 
@@ -54,13 +54,13 @@ export const saveProfile =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
             const profile =
                 await resumeService.saveProfile(
                     req.user.id,
-                    req.body
+                    req.body,
                 );
 
 
@@ -72,10 +72,8 @@ export const saveProfile =
                     "Resume profile saved successfully.",
 
                 data: profile,
-
             });
-
-        }
+        },
     );
 
 
@@ -92,12 +90,12 @@ export const getCustomization =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
             const customization =
                 await resumeService.getCustomization(
-                    req.user.id
+                    req.user.id,
                 );
 
 
@@ -106,10 +104,8 @@ export const getCustomization =
                 success: true,
 
                 data: customization,
-
             });
-
-        }
+        },
     );
 
 
@@ -121,12 +117,12 @@ export const createCustomizationFromProfile =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
             const customization =
                 await resumeService.createCustomizationFromProfile(
-                    req.user.id
+                    req.user.id,
                 );
 
 
@@ -138,10 +134,8 @@ export const createCustomizationFromProfile =
                     "Resume customization prepared successfully.",
 
                 data: customization,
-
             });
-
-        }
+        },
     );
 
 
@@ -153,13 +147,13 @@ export const saveCustomization =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
             const customization =
                 await resumeService.saveCustomization(
                     req.user.id,
-                    req.body
+                    req.body,
                 );
 
 
@@ -171,29 +165,26 @@ export const saveCustomization =
                     "Resume customization saved successfully.",
 
                 data: customization,
-
             });
-
-        }
+        },
     );
 
+
+/*
+ * GET /api/resume/download
+ */
 
 export const downloadResumePdf =
     asyncHandler(
         async (
             req: Request,
-            res: Response
+            res: Response,
         ) => {
 
-            const userId =
-                req.user.id;
-
-
             const resume =
-                await resumeService
-                    .getResumeForPdf(
-                        userId
-                    );
+                await resumeService.getResumeForPdf(
+                    req.user.id,
+                );
 
 
             const safeName =
@@ -204,11 +195,11 @@ export const downloadResumePdf =
                     .trim()
                     .replace(
                         /[^a-zA-Z0-9]+/g,
-                        "-"
+                        "-",
                     )
                     .replace(
                         /^-+|-+$/g,
-                        ""
+                        "",
                     )
                     .toLowerCase();
 
@@ -216,7 +207,7 @@ export const downloadResumePdf =
             generateResumePdf(
                 res,
                 resume,
-                `${safeName || "resume"}.pdf`
+                `${safeName || "resume"}.pdf`,
             );
-        }
+        },
     );

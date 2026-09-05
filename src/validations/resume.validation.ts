@@ -1,217 +1,203 @@
 import { z } from "zod";
 
+import {
+    RESUME_SECTION_TYPES,
+} from "../types/resume";
 
-/* ================================================================
-   EXPERIENCE
-================================================================ */
 
-const experienceSchema =
+/*
+ * ============================================================
+ * COMMON
+ * ============================================================
+ */
+
+const optionalNullableString =
+    z
+        .string()
+        .trim()
+        .nullable()
+        .optional();
+
+
+/*
+ * ============================================================
+ * RESUME SECTION
+ * ============================================================
+ */
+
+const resumeSectionSchema =
     z.object({
 
-        company:
-            z.string().trim().min(1),
+        id:
+            z
+                .string()
+                .trim()
+                .min(1, "Section ID is required")
+                .max(100, "Section ID is too long"),
 
-        position:
-            z.string().trim().min(1),
+        type:
+            z.enum(RESUME_SECTION_TYPES),
 
-        location:
-            z.string().trim().optional(),
+        title:
+            z
+                .string()
+                .trim()
+                .min(1, "Section title is required")
+                .max(150, "Section title is too long"),
 
-        startDate:
-            z.string().trim().min(1),
+        visible:
+            z.boolean(),
 
-        endDate:
-            z.string().trim().optional(),
+        /*
+         * We intentionally allow section-specific structures.
+         *
+         * The backend controls the outer structure while
+         * individual section types can have different content.
+         */
 
-        currentlyWorking:
-            z.boolean().optional(),
-
-        description:
-            z.array(
-                z.string().trim().min(1)
-            ),
-
+        content:
+            z.unknown(),
     });
 
 
-/* ================================================================
-   EDUCATION
-================================================================ */
-
-const educationSchema =
-    z.object({
-
-        institution:
-            z.string().trim().min(1),
-
-        degree:
-            z.string().trim().min(1),
-
-        fieldOfStudy:
-            z.string().trim().optional(),
-
-        startDate:
-            z.string().trim().optional(),
-
-        endDate:
-            z.string().trim().optional(),
-
-        grade:
-            z.string().trim().optional(),
-
-        location:
-            z.string().trim().optional(),
-
-    });
-
-
-/* ================================================================
-   PROJECT
-================================================================ */
-
-const projectSchema =
-    z.object({
-
-        name:
-            z.string().trim().min(1),
-
-        description:
-            z.string().trim().optional(),
-
-        technologies:
-            z.array(
-                z.string().trim()
-            ).optional(),
-
-        url:
-            z.string().trim().optional(),
-
-        github:
-            z.string().trim().optional(),
-
-    });
-
-
-/* ================================================================
-   MASTER PROFILE
-================================================================ */
+/*
+ * ============================================================
+ * PROFILE
+ * ============================================================
+ */
 
 export const resumeProfileSchema =
     z.object({
 
         fullName:
-            z.string().trim().max(150).optional(),
-        email: z
-            .string()
-            .email("Invalid email address")
-            .optional()
-            .or(z.literal("")),
+            optionalNullableString,
+
+        email:
+            optionalNullableString,
 
         headline:
-            z.string().trim().max(250).optional(),
+            optionalNullableString,
 
         phone:
-            z.string().trim().max(40).optional(),
+            optionalNullableString,
 
         location:
-            z.string().trim().max(150).optional(),
+            optionalNullableString,
 
         website:
-            z.string().trim().max(500).optional(),
+            optionalNullableString,
 
         linkedin:
-            z.string().trim().max(500).optional(),
+            optionalNullableString,
 
         github:
-            z.string().trim().max(500).optional(),
+            optionalNullableString,
 
-        summary:
-            z.string().trim().max(5000).optional(),
+        /*
+         * IMPORTANT:
+         *
+         * The order of this array is the resume section order.
+         */
 
-        experience:
-            z.array(
-                experienceSchema
-            ).optional(),
+        sections:
+            z
+                .array(resumeSectionSchema)
+                .superRefine((sections, ctx) => {
 
-        education:
-            z.array(
-                educationSchema
-            ).optional(),
+                    const ids = new Set<string>();
 
-        skills:
-            z.record(
-                z.string(),
-                z.array(
-                    z.string().trim()
-                )
-            ).optional(),
+                    sections.forEach((section, index) => {
 
-        projects:
-            z.array(
-                projectSchema
-            ).optional(),
+                        if (ids.has(section.id)) {
 
+                            ctx.addIssue({
+                                code: z.ZodIssueCode.custom,
+
+                                message:
+                                    `Duplicate section id "${section.id}".`,
+
+                                path: [
+                                    index,
+                                    "id",
+                                ],
+                            });
+
+                        }
+
+                        ids.add(section.id);
+                    });
+
+                })
+                .optional(),
     });
 
 
-/* ================================================================
-   CUSTOMIZATION
-================================================================ */
+/*
+ * ============================================================
+ * CUSTOMIZATION
+ * ============================================================
+ */
 
 export const resumeCustomizationSchema =
     z.object({
 
         fullName:
-            z.string().optional(),
+            optionalNullableString,
 
-        email: z
-            .string()
-            .email("Invalid email address")
-            .optional()
-            .or(z.literal("")),
+        email:
+            optionalNullableString,
 
         headline:
-            z.string().optional(),
+            optionalNullableString,
 
         phone:
-            z.string().optional(),
+            optionalNullableString,
 
         location:
-            z.string().optional(),
+            optionalNullableString,
 
         website:
-            z.string().optional(),
+            optionalNullableString,
 
         linkedin:
-            z.string().optional(),
+            optionalNullableString,
 
         github:
-            z.string().optional(),
+            optionalNullableString,
 
-        summary:
-            z.string().optional(),
+        /*
+         * The order of this array is the customization's
+         * section order.
+         */
 
-        experience:
-            z.array(
-                experienceSchema
-            ).optional(),
+        sections:
+            z
+                .array(resumeSectionSchema)
+                .superRefine((sections, ctx) => {
 
-        education:
-            z.array(
-                educationSchema
-            ).optional(),
+                    const ids = new Set<string>();
 
-        skills:
-            z.record(
-                z.string(),
-                z.array(
-                    z.string()
-                )
-            ).optional(),
+                    sections.forEach((section, index) => {
 
-        projects:
-            z.array(
-                projectSchema
-            ).optional(),
+                        if (ids.has(section.id)) {
 
+                            ctx.addIssue({
+                                code: z.ZodIssueCode.custom,
+
+                                message:
+                                    `Duplicate section id "${section.id}".`,
+
+                                path: [
+                                    index,
+                                    "id",
+                                ],
+                            });
+
+                        }
+
+                        ids.add(section.id);
+                    });
+
+                })
+                .optional(),
     });
