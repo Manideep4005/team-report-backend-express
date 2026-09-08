@@ -96,6 +96,7 @@ class PublicMonitorRepository {
         });
     }
 
+
     async findUserReportsByDate(
         start: Date,
         end: Date
@@ -105,6 +106,10 @@ class PublicMonitorRepository {
                 reportDate: {
                     gte: start,
                     lt: end,
+                },
+
+                user: {
+                    deletedAt: null,
                 },
             },
 
@@ -132,6 +137,10 @@ class PublicMonitorRepository {
 
     async findTeamMembers() {
         return prisma.user.findMany({
+            where: {
+                deletedAt: null,
+            },
+
             orderBy: {
                 name: "asc",
             },
