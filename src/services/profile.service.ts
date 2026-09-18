@@ -1,6 +1,7 @@
 import profileRepository from "../repositories/profile.repository";
 import { ApiError } from "../utils/ApiError";
 import { comparePassword, hashPassword } from "../utils/password";
+import avatarService from "./avatar.service";
 
 class ProfileService {
     async getProfile(userId: string) {
@@ -17,6 +18,44 @@ class ProfileService {
 
     async updateProfile(userId: string, name: string) {
         return profileRepository.updateProfile(userId, name);
+    }
+
+    async updateAvatar(
+        userId: string,
+        buffer: Buffer
+    ) {
+        const avatarUrl =
+            await avatarService.uploadAvatar(
+                buffer,
+                userId
+            );
+
+        return profileRepository.updateAvatar(
+            userId,
+            avatarUrl
+        );
+    }
+
+    async removeAvatar(userId: string) {
+        const user =
+            await profileRepository.findById(userId);
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+        }
+
+        if (user.avatarUrl) {
+            await avatarService.deleteAvatar(
+                userId
+            );
+        }
+
+        return profileRepository.removeAvatar(
+            userId
+        );
     }
 
     async changePassword(

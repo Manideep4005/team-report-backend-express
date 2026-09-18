@@ -6,6 +6,7 @@ import {
     updateProfileSchema,
     changePasswordSchema,
 } from "../validations/profile.validation";
+import { avatarUpload } from "../middleware/avatarUpload.middleware";
 
 const router = Router();
 
@@ -26,6 +27,17 @@ router.put(
     "/password",
     validate(changePasswordSchema),
     ProfileController.changePassword
+);
+
+router.put(
+    "/avatar",
+    avatarUpload.single("avatar"),
+    ProfileController.updateAvatar
+);
+
+router.delete(
+    "/avatar",
+    ProfileController.removeAvatar
 );
 
 export default router;

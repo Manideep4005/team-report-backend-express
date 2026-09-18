@@ -11,6 +11,7 @@ class DashboardRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
             },
             orderBy: {
                 name: "asc",
@@ -34,6 +35,7 @@ class DashboardRepository {
                     select: {
                         name: true,
                         email: true,
+                        avatarUrl: true,
                     },
                 },
             },

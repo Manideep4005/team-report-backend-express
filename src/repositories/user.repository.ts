@@ -55,6 +55,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 roleId: true,
 
                 role: {
@@ -86,6 +87,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 roleId: true,
 
                 role: {
@@ -124,6 +126,7 @@ export class UserRepository {
                 name: true,
                 email: true,
                 roleId: true,
+                avatarUrl: true,
 
                 role: {
                     select: {
@@ -160,6 +163,7 @@ export class UserRepository {
                 name: true,
                 email: true,
                 roleId: true,
+                avatarUrl: true,
 
                 role: {
                     select: {
@@ -194,6 +198,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 roleId: true,
 
                 role: {
@@ -234,6 +239,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 roleId: true,
 
                 role: {
@@ -306,6 +312,7 @@ export class UserRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 roleId: true,
 
                 role: {

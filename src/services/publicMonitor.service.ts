@@ -85,6 +85,7 @@ class PublicMonitorService {
                 return {
                     id: user.id,
                     name: user.name,
+                    avatarUrl: user.avatarUrl,
                     submitted: Boolean(report),
 
                     report: report

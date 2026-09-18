@@ -10,13 +10,17 @@ export const allowedOrigins = [
 export default cors({
     origin: (origin, callback) => {
         // Allow requests without Origin (Postman, curl, server-to-server)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+            return callback(null, true);
+        }
 
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
 
-        return callback(new Error("Not allowed by CORS"));
+        return callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
 });

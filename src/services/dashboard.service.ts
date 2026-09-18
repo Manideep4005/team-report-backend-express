@@ -24,6 +24,7 @@ class DashboardService {
             id: user.id,
             name: user.name,
             email: user.email,
+            avatarUrl: user.avatarUrl,
             submitted: reports.some(r => r.userId === user.id),
         }));
 

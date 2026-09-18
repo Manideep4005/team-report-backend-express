@@ -39,6 +39,7 @@ class LoginHistoryRepository {
                         select: {
                             name: true,
                             email: true,
+                            avatarUrl: true,
                         },
                     },
                 },

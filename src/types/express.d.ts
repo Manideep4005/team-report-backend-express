@@ -12,6 +12,7 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
+    avatarUrl: user.avatarUrl,
     createdAt: Date;
     updatedAt: Date;
     role: AuthRole;

@@ -128,6 +128,7 @@ class PublicMonitorRepository {
                     select: {
                         id: true,
                         name: true,
+                        avatarUrl: true
                     },
                 },
             },
@@ -148,6 +149,7 @@ class PublicMonitorRepository {
             select: {
                 id: true,
                 name: true,
+                avatarUrl: true
             },
         });
     }

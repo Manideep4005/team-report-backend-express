@@ -21,6 +21,52 @@ class ProfileRepository {
         });
     }
 
+    async updateAvatar(
+        id: string,
+        avatarUrl: string
+    ) {
+        return prisma.user.update({
+            where: {
+                id,
+            },
+
+            data: {
+                avatarUrl,
+            },
+
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+    }
+
+    async removeAvatar(id: string) {
+        return prisma.user.update({
+            where: {
+                id,
+            },
+
+            data: {
+                avatarUrl: null,
+            },
+
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+    }
+
+
     async updatePassword(id: string, password: string) {
         return prisma.user.update({
             where: { id },
