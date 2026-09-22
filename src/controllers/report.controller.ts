@@ -171,7 +171,9 @@ export const exportOwn = asyncHandler(
                 ? parsed.data.month
                 : parsed.data.filter === "date"
                     ? parsed.data.date
-                    : "all";
+                    : parsed.data.filter === "range"
+                        ? `${parsed.data.from}_to_${parsed.data.to}`
+                        : "all";
 
         const filename =
             `reports_${period}.xlsx`;
@@ -223,7 +225,11 @@ export const exportAll = asyncHandler(
                 ? parsed.data.month
                 : parsed.data.filter === "date"
                     ? parsed.data.date
-                    : "all";
+                    : parsed.data.filter === "range"
+                        ? `${parsed.data.from}_to_${parsed.data.to}`
+                        : "all";
+
+
 
         const filename =
             `all_reports_${period}.xlsx`;

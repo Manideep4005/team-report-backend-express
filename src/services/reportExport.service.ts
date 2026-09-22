@@ -81,6 +81,14 @@ class ReportExportService {
             ).format(date);
         }
 
+        if (
+            options.filter === "range" &&
+            options.from &&
+            options.to
+        ) {
+            return `${options.from} to ${options.to}`;
+        }
+
         return "Reports";
     }
 

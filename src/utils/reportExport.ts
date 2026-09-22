@@ -3,24 +3,30 @@ import {
 } from "./date";
 
 export type ReportExportFilter = {
-    filter: "all" | "date" | "month";
+    filter: "all" | "date" | "month" | "range";
     date?: string;
     month?: string;
+    from?: string;
+    to?: string;
 };
 
 /**
  * Builds the Prisma where condition for report exports.
  *
  * all:
- *     {}
+ *   {}
  *
  * date:
- *     reportDate >= start of date
- *     reportDate <  start of next date
+ *   reportDate >= start of date
+ *   reportDate <  start of next date
  *
  * month:
- *     reportDate >= start of month
- *     reportDate <  start of next month
+ *   reportDate >= start of month
+ *   reportDate <  start of next month
+ *
+ * range:
+ *   reportDate >= start of from date
+ *   reportDate <  start of day after to date
  */
 export function buildReportExportWhere(
     options: ReportExportFilter
@@ -89,6 +95,42 @@ export function buildReportExportWhere(
             reportDate: {
                 gte: start,
                 lt: end,
+            },
+        };
+    }
+
+    if (
+        options.filter === "range" &&
+        options.from &&
+        options.to
+    ) {
+        const { start } =
+            getISTRange(options.from);
+
+        const { start: end } =
+            getISTRange(options.to);
+
+        // Make the `to` date inclusive.
+        // getISTRange(to).start is midnight of the
+        // selected `to` date, so we need the end of
+        // that date instead.
+        const endDate =
+            new Date(end);
+
+        endDate.setUTCDate(
+            endDate.getUTCDate() + 1
+        );
+
+        if (start >= endDate) {
+            throw new Error(
+                "Invalid date range. From date must be before or equal to To date."
+            );
+        }
+
+        return {
+            reportDate: {
+                gte: start,
+                lt: endDate,
             },
         };
     }
