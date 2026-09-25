@@ -223,6 +223,7 @@ class ReportRepository {
                 id: true,
                 name: true,
                 email: true,
+                avatarUrl: true,
                 deletedAt: true,
             },
             orderBy: {
