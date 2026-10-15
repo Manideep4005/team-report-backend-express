@@ -6,9 +6,9 @@ import { hashPassword } from "../utils/password";
 const DEFAULT_USER_PASSWORD = "test123";
 
 class UserService {
-    private normalizeUsername(value: string): string {
-        return value.trim().toLowerCase();
-    }
+    // private normalizeUsername(value: string): string {
+    //     return value.trim().toLowerCase();
+    // }
 
     private validateUsername(username: string): void {
         if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
@@ -85,7 +85,8 @@ class UserService {
         let username: string;
 
         if (requestedUsername?.trim()) {
-            username = this.normalizeUsername(requestedUsername);
+            // username = this.normalizeUsername(requestedUsername);
+            username = requestedUsername.trim();
             this.validateUsername(username);
 
             const existingUsername =
@@ -175,7 +176,8 @@ class UserService {
         }
 
         if (data.username !== undefined) {
-            const username = this.normalizeUsername(data.username);
+            // const username = this.normalizeUsername(data.username);
+            const username = data.username.trim();
             this.validateUsername(username);
 
             const existing =
