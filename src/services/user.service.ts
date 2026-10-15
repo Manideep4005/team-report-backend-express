@@ -10,14 +10,16 @@ class UserService {
     //     return value.trim().toLowerCase();
     // }
 
+
     private validateUsername(username: string): void {
-        if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
+        if (!/^[a-zA-Z0-9._-]{3,30}$/.test(username)) {
             throw new ApiError(
                 400,
                 "Username must be 3-30 characters and contain only letters, numbers, dots, underscores, or hyphens",
             );
         }
     }
+
 
     private async generateAvailableUsername(
         preferred: string,
