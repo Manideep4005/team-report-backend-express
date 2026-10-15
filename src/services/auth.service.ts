@@ -1,42 +1,115 @@
-import { ApiError } from "../utils/ApiError";
-import { comparePassword, hashPassword } from "../utils/password";
-import { generateToken } from "../utils/jwt";
-import userRepository from "../repositories/user.repository";
+
+import { Request } from "express";
 import { prisma } from "../prisma/client";
 import loginHistoryRepository from "../repositories/loginHistory.repository";
-import { Request } from "express";
+import userRepository from "../repositories/user.repository";
+import { ApiError } from "../utils/ApiError";
+import { generateToken } from "../utils/jwt";
+import { comparePassword, hashPassword } from "../utils/password";
 
 class AuthService {
+    private normalizeUsername(value: string): string {
+        return value.trim().toLowerCase();
+    }
+
+    private validateUsername(username: string): void {
+        if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
+            throw new ApiError(
+                400,
+                "Username must be 3-30 characters and contain only letters, numbers, dots, underscores, or hyphens",
+            );
+        }
+    }
+
+    private async generateAvailableUsername(
+        preferredUsername: string,
+    ): Promise<string> {
+        const base = preferredUsername
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]/g, "")
+            .slice(0, 24);
+
+        const safeBase = base.length >= 3 ? base : "user";
+
+        for (let attempt = 0; attempt < 100; attempt++) {
+            const suffix =
+                attempt === 0 ? "" : String(attempt + 1);
+
+            const candidate =
+                `${safeBase.slice(0, 30 - suffix.length)}${suffix}`;
+
+            const existing =
+                await userRepository.findByUsernameIncludingDeleted(
+                    candidate,
+                );
+
+            if (!existing) {
+                return candidate;
+            }
+        }
+
+        throw new ApiError(
+            409,
+            "Unable to generate a unique username. Please provide one manually.",
+        );
+    }
 
     async register(
         name: string,
         email: string,
-        password: string
+        password: string,
+        requestedUsername?: string,
     ) {
-        const existing = await userRepository.findByEmail(email);
+        const normalizedEmail = email.trim().toLowerCase();
 
-        if (existing) {
+        const existingEmail =
+            await userRepository.findByEmailIncludingDeleted(
+                normalizedEmail,
+            );
+
+        if (existingEmail) {
             throw new ApiError(409, "Email already exists");
         }
 
+        let username: string;
+
+        if (requestedUsername?.trim()) {
+            username = this.normalizeUsername(requestedUsername);
+            this.validateUsername(username);
+
+            const existingUsername =
+                await userRepository.findByUsernameIncludingDeleted(
+                    username,
+                );
+
+            if (existingUsername) {
+                throw new ApiError(409, "Username already exists");
+            }
+        } else {
+            const emailPrefix = normalizedEmail.split("@")[0];
+
+            username =
+                await this.generateAvailableUsername(emailPrefix);
+        }
+
         const employeeRole = await prisma.role.findUnique({
-            where: {
-                name: "EMPLOYEE",
-            },
+            where: { name: "EMPLOYEE" },
         });
 
         if (!employeeRole) {
             throw new ApiError(
                 500,
-                "Default EMPLOYEE role is not configured"
+                "Default EMPLOYEE role is not configured",
             );
         }
 
         const hashed = await hashPassword(password);
 
         const user = await userRepository.create({
-            name,
-            email,
+            name: name.trim(),
+            username,
+            email: normalizedEmail,
             password: hashed,
             roleId: employeeRole.id,
         });
@@ -46,17 +119,16 @@ class AuthService {
             email: user.email,
         });
 
-        return {
-            user,
-            token,
-        };
+        return { user, token };
     }
 
     async login(
-        email: string,
+        identifier: string,
         password: string,
-        req: Request
+        req: Request,
     ) {
+
+
         const ipAddress =
             req.headers["x-forwarded-for"]
                 ?.toString()
@@ -65,77 +137,50 @@ class AuthService {
             req.socket.remoteAddress ||
             null;
 
-        const userAgent =
-            req.headers["user-agent"] || null;
+        const userAgent = req.headers["user-agent"] || null;
 
+        // Do not log the password or password hash.
         console.log("Login attempt:", {
-            email,
+            identifier,
             ipAddress,
         });
 
-
         const user =
-            await userRepository.findByEmail(email);
-
-        // --------------------------------
-        // USER DOES NOT EXIST
-        // --------------------------------
-
-        if (!user) {
-            console.log(
-                "Login failed: user not found",
-                email
+            await userRepository.findByIdentifier(
+                identifier,
             );
 
+        if (!user) {
             await this.recordLoginAttempt({
-                email,
+                email: identifier,
                 status: "FAILED",
                 ipAddress,
                 userAgent,
             });
 
-            throw new ApiError(
-                401,
-                "Invalid credentials"
-            );
+            throw new ApiError(401, "Invalid credentials");
         }
-
-        // --------------------------------
-        // PASSWORD DOES NOT MATCH
-        // --------------------------------
 
         const matched = await comparePassword(
             password,
-            user.password
+            user.password,
         );
 
-        console.log("PASSWORD MATCH RESULT:", matched);
-
         if (!matched) {
-            console.log("WRONG PASSWORD - STORING HISTORY");
-
-            await loginHistoryRepository.create({
+            await this.recordLoginAttempt({
                 userId: user.id,
-                email,
+                email: user.email,
                 status: "FAILED",
-                ipAddress: ipAddress ?? undefined,
-                userAgent: userAgent ?? undefined,
+                ipAddress,
+                userAgent,
             });
 
-            console.log("FAILED LOGIN HISTORY STORED");
-
-            throw new ApiError(
-                401,
-                "Invalid credentials"
-            );
+            throw new ApiError(401, "Invalid credentials");
         }
-        // --------------------------------
-        // SUCCESS
-        // --------------------------------
 
         await this.recordLoginAttempt({
             userId: user.id,
-            email,
+            email: user.email,
             status: "SUCCESS",
             ipAddress,
             userAgent,
@@ -149,19 +194,17 @@ class AuthService {
         const mappedUser = {
             id: user.id,
             name: user.name,
+            username: user.username,
             email: user.email,
             avatarUrl: user.avatarUrl,
-
             role: {
                 id: user.role.id,
                 name: user.role.name,
-
-                permissions:
-                    user.role.permissions.map(
-                        ({ permission }) => ({
-                            code: permission.code,
-                        })
-                    ),
+                permissions: user.role.permissions.map(
+                    ({ permission }) => ({
+                        code: permission.code,
+                    }),
+                ),
             },
         };
 
@@ -171,28 +214,19 @@ class AuthService {
         };
     }
 
-    private async recordLoginAttempt(
-        data: {
-            userId?: string;
-            email: string;
-            status: "SUCCESS" | "FAILED";
-            ipAddress?: string | null;
-            userAgent?: string | null;
-        }
-    ) {
+    private async recordLoginAttempt(data: {
+        userId?: string;
+        email: string;
+        status: "SUCCESS" | "FAILED";
+        ipAddress?: string | null;
+        userAgent?: string | null;
+    }) {
         try {
             await loginHistoryRepository.create(data);
-
-            console.log(
-                "Login history stored:",
-                data.email,
-                data.status
-            );
         } catch (error) {
-            console.error(
-                "Failed to store login history:",
-                error
-            );
+            // A history failure should not expose credentials or
+            // prevent a valid login from completing.
+            console.error("Failed to store login history:", error);
         }
     }
 }

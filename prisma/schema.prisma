@@ -3,24 +3,26 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String
-  email        String         @unique
-  password     String
+  id       String @id @default(uuid())
+  name     String
+  username String? @unique
+  email    String @unique
 
-  avatarUrl    String?
+  password String
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  deletedAt    DateTime?
+  avatarUrl String?
 
-  roleId       String
-  role         Role           @relation(fields: [roleId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
 
   reports      WorkReport[]
   loginHistory LoginHistory[]
@@ -28,7 +30,7 @@ model User {
   publicMonitorLinksCreated PublicMonitorLink[] @relation("PublicMonitorLinksCreated")
   publicMonitorLinksRevoked PublicMonitorLink[] @relation("PublicMonitorLinksRevoked")
 
-  conversationsCreated Conversation[] @relation("ConversationCreatedBy")
+  conversationsCreated Conversation[]       @relation("ConversationCreatedBy")
   conversationMembers  ConversationMember[]
   messages             Message[]
 
@@ -45,7 +47,7 @@ model ResumeProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /*
+  /**
    * ============================================================
    * PERSONAL / HEADER INFORMATION
    * ============================================================
@@ -61,22 +63,18 @@ model ResumeProfile {
   linkedin String?
   github   String?
 
-  /*
+  /**
    * ============================================================
    * DYNAMIC RESUME SECTIONS
-   *
    * Section ordering is determined by the array order.
-   *
    * Example:
-   *
    * sections: [
-   *   Summary,
-   *   Experience,
-   *   Skills,
-   *   Projects,
-   *   Achievements
+   * Summary,
+   * Experience,
+   * Skills,
+   * Projects,
+   * Achievements
    * ]
-   *
    * ============================================================
    */
 
@@ -88,18 +86,17 @@ model ResumeProfile {
   @@index([userId])
 }
 
-
 model ResumeCustomization {
   id String @id @default(uuid())
 
-  /*
+  /**
    * One customized resume per user.
    */
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /*
+  /**
    * ============================================================
    * CUSTOMIZED RESUME CONTENT
    * ============================================================
@@ -107,7 +104,7 @@ model ResumeCustomization {
 
   content Json?
 
-  /*
+  /**
    * Resume template.
    */
 
@@ -118,7 +115,6 @@ model ResumeCustomization {
 
   @@index([userId])
 }
-
 
 model Role {
   id          String           @id @default(uuid())
@@ -220,14 +216,14 @@ enum ConversationType {
 }
 
 model Conversation {
-  id        String           @id @default(uuid())
-  type      ConversationType
-  name      String?
+  id          String           @id @default(uuid())
+  type        ConversationType
+  name        String?
   createdById String
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  createdBy User                @relation("ConversationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy User                 @relation("ConversationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   members   ConversationMember[]
   messages  Message[]
 
@@ -236,10 +232,10 @@ model Conversation {
 }
 
 model ConversationMember {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   conversationId String
   userId         String
-  joinedAt       DateTime     @default(now())
+  joinedAt       DateTime @default(now())
 
   lastReadAt DateTime?
 
@@ -252,12 +248,12 @@ model ConversationMember {
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String    @id @default(uuid())
   conversationId String
   senderId       String
   content        String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -265,4 +261,38 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+enum EmailReminderJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  SKIPPED
+  CANCELLED
+  FAILED
+}
+
+model EmailReminderJob {
+  id       String                 @id @default(uuid()) @db.Uuid
+  jobDate  DateTime               @db.Date
+  slotTime String
+  status   EmailReminderJobStatus @default(PENDING)
+
+  // Store only the user IDs that have not submitted a report.
+  recipientUserIds Json
+  recipientCount   Int  @default(0)
+
+  attempts  Int     @default(0)
+  lastError String? @db.Text
+
+  scheduledFor DateTime
+  processedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobDate, slotTime])
+  @@index([status, scheduledFor])
+  @@index([jobDate])
+  @@map("email_reminder_jobs")
 }

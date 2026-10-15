@@ -20,6 +20,7 @@ import publicMonitorPublicRoutes from "./routes/publicMonitorPublic.routes";
 import chatRoutes from "./chat/chat.routes";
 import resumeRoutes
     from "./routes/resume.routes";
+import emailReminderRoutes from "./routes/emailReminder.routes";
 
 
 const app = express();
@@ -74,6 +75,7 @@ app.use(
     "/api/resume",
     resumeRoutes
 );
+app.use("/api/email-reminders", emailReminderRoutes);
 
 
 // 404 should be AFTER all routes

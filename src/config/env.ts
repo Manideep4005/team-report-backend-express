@@ -17,4 +17,26 @@ export const env = {
 
     CLOUDINARY_API_SECRET:
         process.env.CLOUDINARY_API_SECRET!,
+
+    EMAIL_REMINDERS_ENABLED:
+        process.env.EMAIL_REMINDERS_ENABLED === "true",
+
+    EMAIL_REMINDER_SCHEDULER_ENABLED:
+        process.env.EMAIL_REMINDER_SCHEDULER_ENABLED === "true",
+
+    EMAIL_REMINDER_TIMEZONE:
+        process.env.EMAIL_REMINDER_TIMEZONE || "Asia/Kolkata",
+
+    EMAIL_REMINDER_TIMES:
+        (process.env.EMAIL_REMINDER_TIMES || "12:00,16:00,20:00")
+            .split(",")
+            .map((time) => time.trim()),
+
+
+    BREVO_API_KEY: process.env.BREVO_API_KEY || "",
+
+    EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || "",
+
+    EMAIL_FROM_NAME:
+        process.env.EMAIL_FROM_NAME || "Team Work Tracker",
 };

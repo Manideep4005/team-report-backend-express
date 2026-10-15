@@ -1,15 +1,29 @@
+
 import { prisma } from "../prisma/client";
 
+const userResponseSelect = {
+    id: true,
+    name: true,
+    username: true,
+    email: true,
+    avatarUrl: true,
+    roleId: true,
+    role: {
+        select: {
+            id: true,
+            name: true,
+            description: true,
+        },
+    },
+    createdAt: true,
+    updatedAt: true,
+};
+
 export class UserRepository {
-
-    /* ============================================================
-       ACTIVE USER BY EMAIL
-    ============================================================ */
-
     async findByEmail(email: string) {
         return prisma.user.findFirst({
             where: {
-                email,
+                email: email.toLowerCase(),
                 deletedAt: null,
             },
             include: {
@@ -26,10 +40,49 @@ export class UserRepository {
         });
     }
 
+    async findByUsername(username: string) {
+        return prisma.user.findFirst({
+            where: {
+                username: username.toLowerCase(),
+                deletedAt: null,
+            },
+            include: {
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
 
-    /* ============================================================
-       ACTIVE USER BY ID
-    ============================================================ */
+    async findByIdentifier(identifier: string) {
+
+        return prisma.user.findFirst({
+            where: {
+                deletedAt: null,
+                OR: [
+                    { username: identifier },
+                    { email: identifier },
+                ],
+            },
+            include: {
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
 
     async findById(id: string) {
         return prisma.user.findFirst({
@@ -40,94 +93,40 @@ export class UserRepository {
         });
     }
 
-
-    /* ============================================================
-       ACTIVE USER BY ID WITH ROLE
-    ============================================================ */
-
     async findByIdWithRole(id: string) {
         return prisma.user.findFirst({
             where: {
                 id,
                 deletedAt: null,
             },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatarUrl: true,
-                roleId: true,
-
-                role: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
-                },
-
-                createdAt: true,
-                updatedAt: true,
-            },
+            select: userResponseSelect,
         });
     }
-
-
-    /* ============================================================
-       GET ALL ACTIVE USERS
-    ============================================================ */
 
     async findAll() {
         return prisma.user.findMany({
             where: {
                 deletedAt: null,
             },
-
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatarUrl: true,
-                roleId: true,
-
-                role: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
-                },
-
-                createdAt: true,
-                updatedAt: true,
-            },
-
+            select: userResponseSelect,
             orderBy: {
                 createdAt: "desc",
             },
         });
     }
 
-
-    /* ============================================================
-       GET ALL INACTIVE / DELETED USERS
-    ============================================================ */
-
     async findInactive() {
         return prisma.user.findMany({
             where: {
-                deletedAt: {
-                    not: null,
-                },
+                deletedAt: { not: null },
             },
-
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 roleId: true,
                 avatarUrl: true,
-
                 role: {
                     select: {
                         id: true,
@@ -135,36 +134,26 @@ export class UserRepository {
                         description: true,
                     },
                 },
-
                 createdAt: true,
                 updatedAt: true,
                 deletedAt: true,
             },
-
             orderBy: {
                 deletedAt: "desc",
             },
         });
     }
 
-
-    /* ============================================================
-       FIND USER INCLUDING DELETED
-    ============================================================ */
-
     async findByIdIncludingDeleted(id: string) {
         return prisma.user.findUnique({
-            where: {
-                id,
-            },
-
+            where: { id },
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 roleId: true,
                 avatarUrl: true,
-
                 role: {
                     select: {
                         id: true,
@@ -172,7 +161,6 @@ export class UserRepository {
                         description: true,
                     },
                 },
-
                 createdAt: true,
                 updatedAt: true,
                 deletedAt: true,
@@ -180,178 +168,72 @@ export class UserRepository {
         });
     }
 
-
-    /* ============================================================
-       CREATE
-    ============================================================ */
-
     async create(data: {
         name: string;
+        username: string;
         email: string;
         password: string;
         roleId: string;
     }) {
         return prisma.user.create({
             data,
-
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatarUrl: true,
-                roleId: true,
-
-                role: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
-                },
-
-                createdAt: true,
-                updatedAt: true,
-            },
+            select: userResponseSelect,
         });
     }
-
-
-    /* ============================================================
-       UPDATE
-    ============================================================ */
 
     async update(
         id: string,
         data: {
             name?: string;
+            username?: string;
             email?: string;
             roleId?: string;
-        }
+        },
     ) {
         return prisma.user.update({
-            where: {
-                id,
-            },
-
+            where: { id },
             data,
-
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatarUrl: true,
-                roleId: true,
-
-                role: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
-                },
-
-                createdAt: true,
-                updatedAt: true,
-            },
+            select: userResponseSelect,
         });
     }
 
-
-    /* ============================================================
-       UPDATE PASSWORD
-    ============================================================ */
-
-    async updatePassword(
-        id: string,
-        password: string
-    ) {
+    async updatePassword(id: string, password: string) {
         return prisma.user.update({
-            where: {
-                id,
-            },
-
-            data: {
-                password,
-            },
+            where: { id },
+            data: { password },
         });
     }
-
-
-    /* ============================================================
-       SOFT DELETE
-    ============================================================ */
 
     async softDelete(id: string) {
         return prisma.user.update({
-            where: {
-                id,
-            },
-
-            data: {
-                deletedAt: new Date(),
-            },
+            where: { id },
+            data: { deletedAt: new Date() },
         });
     }
-
-
-    /* ============================================================
-       RESTORE
-    ============================================================ */
 
     async restore(id: string) {
         return prisma.user.update({
-            where: {
-                id,
-            },
-
-            data: {
-                deletedAt: null,
-            },
-
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatarUrl: true,
-                roleId: true,
-
-                role: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
-                },
-
-                createdAt: true,
-                updatedAt: true,
-            },
+            where: { id },
+            data: { deletedAt: null },
+            select: userResponseSelect,
         });
     }
-
-
-    /* ============================================================
-       ROLE
-    ============================================================ */
 
     async findRoleById(roleId: string) {
         return prisma.role.findUnique({
-            where: {
-                id: roleId,
-            },
+            where: { id: roleId },
         });
     }
 
-
-    /* ============================================================
-       EMAIL INCLUDING DELETED
-    ============================================================ */
-
     async findByEmailIncludingDeleted(email: string) {
         return prisma.user.findUnique({
-            where: {
-                email,
-            },
+            where: { email: email.toLowerCase() },
+        });
+    }
+
+    async findByUsernameIncludingDeleted(username: string) {
+        return prisma.user.findUnique({
+            where: { username: username.toLowerCase() },
         });
     }
 }

@@ -29,6 +29,7 @@ export async function authenticate(
                 id: true,
                 name: true,
                 email: true,
+                username: true,
                 avatarUrl: true,
                 createdAt: true,
                 updatedAt: true,
@@ -66,6 +67,7 @@ export async function authenticate(
             avatarUrl: user.avatarUrl,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+            username: user.username!,
 
             role: {
                 id: user.role.id,

@@ -5,6 +5,7 @@ import app from "./app";
 import { env } from "./config/env";
 import { AuthenticatedSocket, authenticateSocket, registerChatSocketEvents } from "./chat/chat.socket";
 import { allowedOrigins } from "./config/cors";
+import { startEmailReminderScheduler } from "./services/emailReminder.scheduler";
 
 console.log("Process ID:", process.pid);
 console.log("Started at:", new Date().toISOString());
@@ -39,6 +40,8 @@ io.on("connection", (socket) => {
         );
     });
 });
+
+startEmailReminderScheduler();
 
 httpServer.listen(env.PORT, () => {
     console.log(`🚀 Server running on port ${env.PORT}`);
