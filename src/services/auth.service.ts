@@ -8,9 +8,9 @@ import { generateToken } from "../utils/jwt";
 import { comparePassword, hashPassword } from "../utils/password";
 
 class AuthService {
-    private normalizeUsername(value: string): string {
-        return value.trim().toLowerCase();
-    }
+    // private normalizeUsername(value: string): string {
+    //     return value.trim().toLowerCase();
+    // }
 
     private validateUsername(username: string): void {
         if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
@@ -26,7 +26,6 @@ class AuthService {
     ): Promise<string> {
         const base = preferredUsername
             .trim()
-            .toLowerCase()
             .replace(/[^a-z0-9._-]/g, "")
             .slice(0, 24);
 
@@ -61,7 +60,7 @@ class AuthService {
         password: string,
         requestedUsername?: string,
     ) {
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = email;
 
         const existingEmail =
             await userRepository.findByEmailIncludingDeleted(
@@ -75,7 +74,8 @@ class AuthService {
         let username: string;
 
         if (requestedUsername?.trim()) {
-            username = this.normalizeUsername(requestedUsername);
+            // username = this.normalizeUsername(requestedUsername);
+            username = requestedUsername.trim();
             this.validateUsername(username);
 
             const existingUsername =

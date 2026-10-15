@@ -10,7 +10,7 @@ const usernameSchema = z
         /^[a-zA-Z0-9._-]+$/,
         "Username can contain only letters, numbers, dots, underscores, and hyphens",
     )
-    .transform((username) => username.toLowerCase());
+    .transform((username) => username);
 
 export const registerSchema = z.object({
     name: z
@@ -23,7 +23,7 @@ export const registerSchema = z.object({
 
     email: z
         .email("Invalid email address")
-        .transform((email) => email.trim().toLowerCase()),
+        .transform((email) => email),
 
     password: z
         .string()

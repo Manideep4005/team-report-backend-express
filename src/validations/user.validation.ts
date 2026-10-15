@@ -10,7 +10,7 @@ const usernameSchema = z
         /^[a-zA-Z0-9._-]+$/,
         "Username can contain only letters, numbers, dots, underscores, and hyphens",
     )
-    .transform((username) => username.toLowerCase());
+    .transform((username) => username);
 
 export const createUserSchema = z.object({
     name: z
@@ -25,7 +25,7 @@ export const createUserSchema = z.object({
         .string()
         .trim()
         .email("Invalid email")
-        .transform((email) => email.toLowerCase()),
+        .transform((email) => email),
 
     roleId: z
         .string()
@@ -47,7 +47,7 @@ export const updateUserSchema = z
             .string()
             .trim()
             .email("Invalid email")
-            .transform((email) => email.toLowerCase())
+            .transform((email) => email)
             .optional(),
 
         roleId: z

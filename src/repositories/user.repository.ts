@@ -23,7 +23,7 @@ export class UserRepository {
     async findByEmail(email: string) {
         return prisma.user.findFirst({
             where: {
-                email: email.toLowerCase(),
+                email: email,
                 deletedAt: null,
             },
             include: {
@@ -43,7 +43,7 @@ export class UserRepository {
     async findByUsername(username: string) {
         return prisma.user.findFirst({
             where: {
-                username: username.toLowerCase(),
+                username: username,
                 deletedAt: null,
             },
             include: {
@@ -227,13 +227,13 @@ export class UserRepository {
 
     async findByEmailIncludingDeleted(email: string) {
         return prisma.user.findUnique({
-            where: { email: email.toLowerCase() },
+            where: { email: email },
         });
     }
 
     async findByUsernameIncludingDeleted(username: string) {
         return prisma.user.findUnique({
-            where: { username: username.toLowerCase() },
+            where: { username: username },
         });
     }
 }

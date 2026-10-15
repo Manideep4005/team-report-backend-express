@@ -24,7 +24,6 @@ class UserService {
     ): Promise<string> {
         const base = preferred
             .trim()
-            .toLowerCase()
             .replace(/[^a-z0-9._-]/g, "")
             .slice(0, 24);
 
@@ -71,7 +70,7 @@ class UserService {
         currentUserRole: string,
         requestedUsername?: string,
     ) {
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = email.trim();
 
         const existingEmail =
             await userRepository.findByEmailIncludingDeleted(
@@ -159,9 +158,9 @@ class UserService {
         }
 
         if (data.email !== undefined) {
-            const email = data.email.trim().toLowerCase();
+            const email = data.email.trim();
 
-            if (email !== user.email.toLowerCase()) {
+            if (email !== user.email) {
                 const existing =
                     await userRepository.findByEmailIncludingDeleted(
                         email,
